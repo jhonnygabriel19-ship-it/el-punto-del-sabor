@@ -80,7 +80,7 @@ function wrapCanvasText(ctx, text, maxWidth) {
 
   words.forEach(word => {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const metrics = ctx.measureText(testLine);
+    const metrics = ctx ? ctx.measureText(testLine) : { width: 0 };
     if (metrics.width > maxWidth && currentLine) {
       lines.push(currentLine);
       currentLine = word;
@@ -758,7 +758,7 @@ export default function App() {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
-          if (Array.isArray(data.products) && data.products.length > 0) setProducts(data.products);
+          if (Array.isArray(data.products)) setProducts(data.products);
           if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
           if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
           if (Array.isArray(data.customers)) setCustomers(data.customers);
@@ -1004,6 +1004,34 @@ export default function App() {
     setDeletePinError('');
   };
 
+  // Función para eliminar cualquier ítem del menú con autorización de clave especial
+  const handleDeleteProduct = (prod) => {
+    requestAuthorizedDelete(
+      `Eliminar del Menú: ${prod.name}`,
+      `¿Confirmas eliminar permanentemente "${prod.name}" ($${Number(prod.price).toFixed(2)}) de tu catálogo e inventario?`,
+      () => {
+        setProducts(prev => prev.filter(item => item.id !== prod.id));
+        setCart(prev => prev.filter(item => item.productId !== prod.id));
+        setCustomerCart(prev => prev.filter(item => item.id !== prod.id));
+        if (editingProduct && editingProduct.id === prod.id) {
+          setEditingProduct(null);
+          setProductForm({
+            name: '',
+            category: 'perros',
+            stage: 1,
+            price: '',
+            cost: '',
+            stock: '',
+            minStock: 10,
+            description: '',
+            image: ''
+          });
+        }
+        showNotification(`Producto "${prod.name}" eliminado del menú.`);
+      }
+    );
+  };
+
   // Modal rápido para crear cliente o ruta desde el POS
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
@@ -1109,6 +1137,7 @@ export default function App() {
       // Canvas temporal para medir líneas envueltas antes de fijar el alto total
       const measureCanvas = document.createElement('canvas');
       const mCtx = measureCanvas.getContext('2d');
+      if (!mCtx) return;
 
       const preparedBlocks = [];
       let calculatedHeight = 165;
@@ -1140,6 +1169,7 @@ export default function App() {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
       // Fondo blanco y marco de margen sutil
       ctx.fillStyle = '#ffffff';
@@ -1480,6 +1510,7 @@ export default function App() {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
       // Fondo gourmet oscuro con detalles cálidos
       const grad = ctx.createLinearGradient(0, 0, 0, height);
@@ -1825,10 +1856,12 @@ export default function App() {
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        setProductForm(prev => ({ ...prev, image: compressedDataUrl }));
-        showNotification('Fotografía cargada y optimizada correctamente.');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          setProductForm(prev => ({ ...prev, image: compressedDataUrl }));
+          showNotification('Fotografía cargada y optimizada correctamente.');
+        }
       };
       img.src = event.target.result;
     };
@@ -3608,7 +3641,7 @@ export default function App() {
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="submit"
                     className="flex-1 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-extrabold text-xs transition"
@@ -3616,26 +3649,36 @@ export default function App() {
                     {editingProduct ? 'Guardar Cambios' : 'Agregar al Menú'}
                   </button>
                   {editingProduct && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingProduct(null);
-                        setProductForm({
-                          name: '',
-                          category: 'perros',
-                          stage: 1,
-                          price: '',
-                          cost: '',
-                          stock: '',
-                          minStock: 10,
-                          description: '',
-                          image: ''
-                        });
-                      }}
-                      className="px-3 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
-                    >
-                      Cancelar
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(editingProduct)}
+                        className="px-3 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1 transition"
+                        title="Eliminar este producto del menú"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setProductForm({
+                            name: '',
+                            category: 'perros',
+                            stage: 1,
+                            price: '',
+                            cost: '',
+                            stock: '',
+                            minStock: 10,
+                            description: '',
+                            image: ''
+                          });
+                        }}
+                        className="px-3 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    </>
                   )}
                 </div>
               </form>
@@ -3649,7 +3692,7 @@ export default function App() {
                     Catálogo e Inventario de "El Punto del Sabor" ({products.length} productos)
                   </h2>
                   <p className="text-xs text-stone-500">
-                    Haz clic en "Editar / Subir Foto" en cualquier artículo para actualizar su imagen o stock.
+                    Haz clic en "Editar / Subir Foto" para actualizar un artículo o en "Eliminar" para quitarlo del menú.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -3725,7 +3768,7 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                      <div className="px-3 py-2 bg-stone-50 border-t border-stone-100 flex items-center justify-between text-xs">
+                      <div className="px-3 py-2 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-2 text-xs">
                         <span
                           className={`font-bold ${
                             p.stock <= p.minStock ? 'text-red-600' : 'text-stone-700'
@@ -3733,26 +3776,36 @@ export default function App() {
                         >
                           Stock actual: {p.stock} uds
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingProduct(p);
-                            setProductForm({
-                              name: p.name,
-                              category: p.category,
-                              stage: p.stage,
-                              price: p.price,
-                              cost: p.cost,
-                              stock: p.stock,
-                              minStock: p.minStock,
-                              description: p.description,
-                              image: p.image
-                            });
-                          }}
-                          className="px-3 py-1 rounded-xl bg-stone-900 text-amber-400 font-bold text-xs flex items-center gap-1"
-                        >
-                          <Edit3 className="w-3 h-3" /> Editar / Subir Foto
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingProduct(p);
+                              setProductForm({
+                                name: p.name,
+                                category: p.category,
+                                stage: p.stage,
+                                price: p.price,
+                                cost: p.cost,
+                                stock: p.stock,
+                                minStock: p.minStock,
+                                description: p.description,
+                                image: p.image
+                              });
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold text-xs flex items-center gap-1 transition"
+                          >
+                            <Edit3 className="w-3 h-3" /> Editar / Foto
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(p)}
+                            className="px-2.5 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs flex items-center gap-1 transition"
+                            title="Eliminar ítem del menú (Requiere Clave Especial)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -3991,7 +4044,7 @@ export default function App() {
         )}
 
         {/* ========================================== */}
-        {/* MÓDULO 4: GASTOS DE INSOMOS E INVERSIÓN INICIAL */}
+        {/* MÓDULO 4: GASTOS DE INSUMOS E INVERSIÓN INICIAL */}
         {/* ========================================== */}
         {activeTab === 'expenses' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -4843,7 +4896,7 @@ export default function App() {
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-500">
-                  Esta clave se solicita cada vez que alguien intenta eliminar rutas de delivery, facturas, gastos o clientes.
+                  Esta clave se solicita cada vez que alguien intenta eliminar productos del menú, rutas de delivery, facturas, gastos o clientes.
                 </p>
                 <form
                   onSubmit={e => {
