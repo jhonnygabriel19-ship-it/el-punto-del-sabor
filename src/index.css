@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================== */
+/* ESTILOS GLOBALES: FONDOS CLAROS Y BARRAS DE SCROLL */
+/* ========================================== */
+
+/* Forzar fondos blancos y texto oscuro nítido en todos los inputs, textareas y selects */
+input, textarea, select {
+  background-color: #ffffff !important;
+  color: #1c1917 !important;
+}
+
+/* Estilizar la barra de desplazamiento vertical y horizontal (Delgada y elegante) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f4; /* Fondo claro de la pista */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d6d3d1; /* Color de la barra */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e; /* Color al pasar el cursor */
+}
