@@ -5492,7 +5492,7 @@ export default function App() {
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-2">
                 <button type="submit" className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs">
                   Confirmar Pago
                 </button>
@@ -5506,4 +5506,3 @@ export default function App() {
       )}
     </div>
   );
-}
