@@ -4484,6 +4484,10 @@ export default function App() {
                 <h2 className="text-lg font-black text-stone-900">
                   Cierre de Ventas Diario — "El Punto del Sabor"
                 </h2>
+              <div>
+                <h2 className="text-lg font-black text-stone-900">
+                  Cierre de Ventas Diario — "El Punto del Sabor"
+                </h2>
                 <p className="text-xs text-stone-500">
                   Detalle de todos los productos vendidos, montos percibidos y referencias de Pago Móvil.
                 </p>
