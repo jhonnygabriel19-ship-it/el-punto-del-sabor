@@ -174,7 +174,6 @@ const INITIAL_USERS = [
 ];
 
 const INITIAL_PRODUCTS = [
-  // ETAPA 1: 3 TIPOS DE PERROS CALIENTES Y SUS RESPECTIVOS COMBOS CON REFRESCO
   {
     id: 'prod_perro_1',
     name: 'Perro Caliente Clásico',
@@ -279,8 +278,6 @@ const INITIAL_PRODUCTS = [
     description: 'Botella de 1.5 Litros ideal para combos familiares.',
     image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=700&q=80'
   },
-
-  // ETAPA 2: HAMBURGUESAS Y SUS COMBOS CON REFRESCO
   {
     id: 'prod_hamb_1',
     name: 'Hamburguesa Clásica El Punto',
@@ -307,8 +304,6 @@ const INITIAL_PRODUCTS = [
     description: 'Hamburguesa doble carne con queso de mano y tocineta + Refresco personal.',
     image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80'
   },
-
-  // ETAPA 3: PAPAS FRITAS EN COMBOS Y RACIONES
   {
     id: 'prod_papas_1',
     name: 'Ración de Papas Fritas Crocantes con Queso y Tocineta',
@@ -322,8 +317,6 @@ const INITIAL_PRODUCTS = [
     description: 'Papas fritas importadas recién hechas con topping de queso fundido y tocineta.',
     image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=500&q=80'
   },
-
-  // ETAPA 4: ESPECIALIDADES (TEQUEÑOS, TENDERS DE POLLO, POSTRES, HELADOS)
   {
     id: 'prod_esp_1',
     name: 'Ración de 6 Tequeños Full Queso con Salsa tártara',
@@ -441,7 +434,7 @@ const INITIAL_EXPENSES = [
     amount: 42.50,
     supplier: 'Insumos Rápidos Express',
     expectedYieldUnits: 120,
-    consumedPercent: 85 // Generará alarma de consumo excesivo de insumo vs ventas
+    consumedPercent: 85
   },
   {
     id: 'exp_4',
@@ -535,7 +528,7 @@ const INITIAL_SALES = [
   },
   {
     id: 'sale_init_2',
-    invoiceNumber: 'EPDS-1002',
+    invoiceNumber: 'EPDS-CR-0001',
     date: new Date().toISOString().split('T')[0],
     timestamp: new Date().toISOString(),
     cashier: 'Jhonny Rivas',
@@ -620,7 +613,6 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState('21237816');
   const [loginError, setLoginError] = useState('');
 
-  // Detectar automáticamente si el enlace fue abierto por un cliente (?vista=menu o #menu-digital)
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -644,7 +636,6 @@ export default function App() {
   const [customerFilterCat, setCustomerFilterCat] = useState('todos');
   const [customerSearch, setCustomerSearch] = useState('');
 
-  // Datos completos del cliente en el Menú Digital Público para facturación por WhatsApp
   const [customerOrderForm, setCustomerOrderForm] = useState({
     name: '',
     document: '',
@@ -666,7 +657,6 @@ export default function App() {
   );
   const [isSyncingBCV, setIsSyncingBCV] = useState(false);
 
-  // Clave especial de seguridad para autorizar eliminaciones (Por defecto: 2026)
   const [securityDeletePin, setSecurityDeletePin] = useState(() =>
     loadFromStorage('epds_delete_pin_v2', '2026')
   );
@@ -680,9 +670,26 @@ export default function App() {
   const [deletePinAttempt, setDeletePinAttempt] = useState('');
   const [deletePinError, setDeletePinError] = useState('');
 
+  // NUEVO: Filtro de facturas (contado / crédito) y modal de cobro de factura a crédito
+  const [invoiceFilterType, setInvoiceFilterType] = useState('all');
+  const [creditPaymentModal, setCreditPaymentModal] = useState({
+    isOpen: false,
+    saleId: null,
+    invoiceNumber: '',
+    customerName: '',
+    totalUSD: 0,
+    daysPending: 0,
+    paymentMethod: 'Pago Móvil',
+    reference: '',
+    senderName: '',
+    senderDocument: '',
+    senderBank: '0102 - Banco de Venezuela (BDV)',
+    senderPhone: '',
+    notes: ''
+  });
+
   const [products, setProducts] = useState(() => {
     const saved = loadFromStorage('epds_products_v2', INITIAL_PRODUCTS);
-    // Actualizar automáticamente cualquier imagen dibujada (SVG) o URL antigua a las fotografías gastronómicas reales
     const brokenOrOldUrls = [
       'photo-1627054245718-b7d7f000b35b',
       'photo-1599599810694-b5b37304c041',
@@ -704,7 +711,6 @@ export default function App() {
   const [expenses, setExpenses] = useState(() => loadFromStorage('epds_expenses_v2', INITIAL_EXPENSES));
   const [sales, setSales] = useState(() => loadFromStorage('epds_sales_v2', INITIAL_SALES));
 
-  // Memoria persistente de Insumos/Productos Comprados y Comercios/Proveedores
   const [supplyCatalog, setSupplyCatalog] = useState(() =>
     loadFromStorage('epds_supply_catalog_v2', INITIAL_SUPPLY_CATALOG)
   );
@@ -712,7 +718,6 @@ export default function App() {
     loadFromStorage('epds_supplier_catalog_v2', INITIAL_SUPPLIERS_CATALOG)
   );
 
-  // Notificaciones flotantes
   const [notification, setNotification] = useState(null);
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -748,7 +753,6 @@ export default function App() {
     };
   }, []);
 
-  // Escuchar cambios desde la base de datos en la nube para no perder ningún registro
   useEffect(() => {
     if (!db || !fbUser) return;
     const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -770,7 +774,6 @@ export default function App() {
           if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
           setCloudReady(true);
         } else {
-          // Inicializar documento en la nube con los datos actuales
           setDoc(
             stateDocRef,
             {
@@ -800,7 +803,6 @@ export default function App() {
     return () => unsub();
   }, [fbUser]);
 
-  // Función central para persistir inmediatamente en la nube y en almacenamiento local
   const persistToCloud = async (partialData) => {
     if (!db || !fbUser) return;
     try {
@@ -818,7 +820,6 @@ export default function App() {
     }
   };
 
-  // Guardar automáticamente en LocalStorage y sincronizar cambios con la Nube
   useEffect(() => {
     try { localStorage.setItem('epds_users_v2', JSON.stringify(users)); } catch (e) {}
     if (cloudReady) persistToCloud({ users });
@@ -882,10 +883,9 @@ export default function App() {
   const [selectedCustomerId, setSelectedCustomerId] = useState('cli_1');
   const [customDeliveryAddress, setCustomDeliveryAddress] = useState(INITIAL_CUSTOMERS[0].address);
   const [selectedZoneId, setSelectedZoneId] = useState('zone_2');
-  const [paymentCondition, setPaymentCondition] = useState('contado'); // 'contado' | 'credito'
+  const [paymentCondition, setPaymentCondition] = useState('contado');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Pago Móvil');
 
-  // Celdas separadas para los datos del emisor (sin tener que poner "/" manualmente)
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentSenderName, setPaymentSenderName] = useState(INITIAL_CUSTOMERS[0].name);
   const [paymentSenderDoc, setPaymentSenderDoc] = useState(INITIAL_CUSTOMERS[0].document);
@@ -897,7 +897,6 @@ export default function App() {
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
 
-  // Cambiar método de pago limpia o adapta el campo de Banco / Usuario Binance
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
     const lower = methodName.toLowerCase();
@@ -908,27 +907,11 @@ export default function App() {
       setPaymentSenderBank(VENEZUELAN_BANKS[0]);
     }
   };
-  
-  // ==========================================
-  // Nuevos estados para Créditos y Filtros
-  // ==========================================
-  const [closingFilter, setClosingFilter] = useState('todas');
-  const [payCreditModal, setPayCreditModal] = useState(null);
-  const [payCreditForm, setPayCreditForm] = useState({
-    method: 'Pago Móvil',
-    reference: '',
-    bank: ''
-  });
-  
-  // ==========================================
-  // SINCRONIZACIÓN AUTOMÁTICA DEL DÓLAR BCV EN TIEMPO REAL
-  // ==========================================
+
   const syncBCVExchangeRate = async (silent = false) => {
     setIsSyncingBCV(true);
     try {
       let fetchedRate = null;
-
-      // Fuente 1: API pública en vivo del BCV (Venezuela)
       try {
         const res1 = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         if (res1.ok) {
@@ -937,11 +920,7 @@ export default function App() {
             fetchedRate = Number(Number(data1.promedio).toFixed(2));
           }
         }
-      } catch (err1) {
-        // Continúa al respaldo 2
-      }
-
-      // Fuente 2: Open Exchange Rates ( Paridad oficial VES/USD )
+      } catch (err1) {}
       if (!fetchedRate) {
         try {
           const res2 = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -951,11 +930,8 @@ export default function App() {
               fetchedRate = Number(Number(data2.rates.VES).toFixed(2));
             }
           }
-        } catch (err2) {
-          // Continúa
-        }
+        } catch (err2) {}
       }
-
       if (fetchedRate && fetchedRate > 0) {
         const nowFormatted = new Date().toLocaleString('es-VE', {
           day: '2-digit',
@@ -978,7 +954,6 @@ export default function App() {
     }
   };
 
-  // Sincronizar automáticamente la tasa BCV al abrir la aplicación y cada 30 minutos
   useEffect(() => {
     syncBCVExchangeRate(true);
     const interval = setInterval(() => {
@@ -987,9 +962,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // ==========================================
-  // SISTEMA DE AUTORIZACIÓN CON CLAVE ESPECIAL PARA ELIMINAR
-  // ==========================================
   const requestAuthorizedDelete = (title, description, actionCallback) => {
     setDeletePinAttempt('');
     setDeletePinError('');
@@ -1015,7 +987,6 @@ export default function App() {
     setDeletePinError('');
   };
 
-  // Función para eliminar cualquier ítem del menú con autorización de clave especial
   const handleDeleteProduct = (prod) => {
     requestAuthorizedDelete(
       `Eliminar del Menú: ${prod.name}`,
@@ -1043,7 +1014,6 @@ export default function App() {
     );
   };
 
-  // Modal rápido para crear cliente o ruta desde el POS
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
     name: '',
@@ -1055,9 +1025,6 @@ export default function App() {
 
   const [newZoneForm, setNewZoneForm] = useState({ name: '', fee: '' });
 
-  // ==========================================
-  // ESTADOS DE GESTIÓN DE MENÚ E INVENTARIO
-  // ==========================================
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: '',
@@ -1071,12 +1038,9 @@ export default function App() {
     image: ''
   });
 
-  // ==========================================
-  // ESTADOS DE GASTOS E INVERSIÓN CON AUTOCOMPLETADO Y DESPLEGABLE
-  // ==========================================
   const [expenseForm, setExpenseForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    type: 'insumo', // 'insumo' | 'inversion' | 'operativo'
+    type: 'insumo',
     category: '',
     description: '',
     amount: '',
@@ -1087,7 +1051,6 @@ export default function App() {
   const [showSupplySuggestions, setShowSupplySuggestions] = useState(false);
   const [showSupplierSuggestions, setShowSupplierSuggestions] = useState(false);
 
-  // Filtrado por escritura para el autocompletado de Insumos/Productos comprados
   const matchingSupplies = useMemo(() => {
     const q = (expenseForm.category || '').trim().toLowerCase();
     if (!q) return supplyCatalog;
@@ -1098,16 +1061,12 @@ export default function App() {
     );
   }, [supplyCatalog, expenseForm.category]);
 
-  // Filtrado por escritura para el autocompletado de Comercios/Proveedores
   const matchingSuppliers = useMemo(() => {
     const q = (expenseForm.supplier || '').trim().toLowerCase();
     if (!q) return supplierCatalog;
     return supplierCatalog.filter(sup => sup.toLowerCase().includes(q));
   }, [supplierCatalog, expenseForm.supplier]);
 
-  // ==========================================
-  // ESTADOS DE CIERRE DIARIO Y CONFIGURACIÓN
-  // ==========================================
   const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
   const [passwordChangeForm, setPasswordChangeForm] = useState({
     newPassword: '',
@@ -1120,7 +1079,6 @@ export default function App() {
   });
   const [newPaymentMethodName, setNewPaymentMethodName] = useState('');
 
-  // Sincronizar dirección, ruta y celdas separadas del emisor cuando cambia el cliente en el POS
   const handleSelectCustomerInPOS = (custId) => {
     setSelectedCustomerId(custId);
     const found = customers.find(c => c.id === custId);
@@ -1136,16 +1094,15 @@ export default function App() {
   };
 
   // ==========================================
-  // GENERADOR Y DESCARGA DIRECTA DE ARCHIVO .PDF CON MÁRGENES AJUSTADOS Y AUTO-SALTOS DE LÍNEA
+  // GENERADOR Y DESCARGA DIRECTA DE ARCHIVO .PDF CON MÁRGENES AJUSTADOS
   // ==========================================
   const generateAndDownloadPDF = (title, subtitle, linesArray, filename = 'Documento.pdf') => {
     try {
-      const width = 794; // A4 a 96 DPI
-      const marginX = 48; // Margen seguro izquierdo y derecho
+      const width = 794;
+      const marginX = 48;
       const contentWidth = width - marginX * 2;
       const lineHeight = 24;
 
-      // Canvas temporal para medir líneas envueltas antes de fijar el alto total
       const measureCanvas = document.createElement('canvas');
       const mCtx = measureCanvas.getContext('2d');
       if (!mCtx) return;
@@ -1182,11 +1139,9 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Fondo blanco y marco de margen sutil
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
-      // Encabezado corporativo dentro de márgenes
       ctx.fillStyle = '#1c1917';
       ctx.fillRect(0, 0, width, 120);
 
@@ -1204,7 +1159,6 @@ export default function App() {
       const subLines = wrapCanvasText(ctx, subtitle, contentWidth);
       ctx.fillText(subLines[0] || '', marginX, 98);
 
-      // Cuerpo del documento con ajuste estricto a los márgenes
       let y = 155;
       preparedBlocks.forEach(block => {
         if (block.type === 'divider') {
@@ -1247,7 +1201,6 @@ export default function App() {
         }
       });
 
-      // Convertir Canvas a JPEG y empaquetar en contenedor PDF 1.4 estándar
       const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
       const base64Data = jpegDataUrl.split(',')[1];
       const jpegBinary = atob(base64Data);
@@ -1302,7 +1255,6 @@ export default function App() {
       }
       addString(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
 
-      // Construir Uint8Array binario para el Blob PDF
       const totalBytes = currentOffset;
       const uint8 = new Uint8Array(totalBytes);
       let pos = 0;
@@ -1398,9 +1350,6 @@ export default function App() {
     );
   };
 
-  // ==========================================
-  // DESCARGA DEL MENÚ COMERCIAL PARA CLIENTES (PDF Y CARTA IMAGEN HD) + ENLACE DIGITAL
-  // ==========================================
   const availableCustomerProducts = useMemo(() => {
     return products.filter(p => {
       const hasStock = Number(p.stock) > 0 && p.active !== false;
@@ -1511,7 +1460,7 @@ export default function App() {
     try {
       const items = availableCustomerProducts;
       const width = 900;
-      const marginX = 48; // Margen lateral estricto
+      const marginX = 48;
       const boxWidth = width - marginX * 2;
       const rowHeight = 90;
       const footerBoxHeight = 96;
@@ -1523,14 +1472,12 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Fondo gourmet oscuro con detalles cálidos
       const grad = ctx.createLinearGradient(0, 0, 0, height);
       grad.addColorStop(0, '#1c1917');
       grad.addColorStop(1, '#292524');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
-      // Banner superior con margen controlado
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, width, 155);
 
@@ -1549,10 +1496,9 @@ export default function App() {
       );
 
       let y = 195;
-      const textMaxW = boxWidth - 210; // Espacio libre antes del cuadro de precio
+      const textMaxW = boxWidth - 210;
 
       items.forEach((p, idx) => {
-        // Tarjeta de fila respetando márgenes izquierdo y derecho
         ctx.fillStyle = idx % 2 === 0 ? '#292524' : '#1f1c1a';
         ctx.fillRect(marginX, y - 34, boxWidth, 76);
 
@@ -1560,13 +1506,11 @@ export default function App() {
         ctx.lineWidth = 1;
         ctx.strokeRect(marginX, y - 34, boxWidth, 76);
 
-        // Nombre del plato ajustado al margen
         ctx.fillStyle = '#fbbf24';
         ctx.font = 'bold 19px sans-serif';
         const titleLines = wrapCanvasText(ctx, p.name, textMaxW);
         ctx.fillText(titleLines[0] || '', marginX + 18, y - 8);
 
-        // Descripción envuelta en hasta 2 líneas para que nunca se corte ni invada el precio
         ctx.fillStyle = '#d6d3d1';
         ctx.font = '13px sans-serif';
         const descLines = wrapCanvasText(ctx, p.description || '', textMaxW);
@@ -1575,7 +1519,6 @@ export default function App() {
           ctx.fillText(descLines[1], marginX + 18, y + 31);
         }
 
-        // Etiqueta de precio alineada dentro del margen derecho
         const priceBoxW = 165;
         const priceBoxX = width - marginX - priceBoxW - 14;
         ctx.fillStyle = '#f59e0b';
@@ -1589,7 +1532,6 @@ export default function App() {
         y += rowHeight;
       });
 
-      // Recuadro final de Formas de Pago y Contacto dentro de los márgenes (2 líneas centradas)
       const footerY = height - footerBoxHeight - 25;
       ctx.fillStyle = '#292524';
       ctx.fillRect(marginX, footerY, boxWidth, footerBoxHeight);
@@ -1617,15 +1559,12 @@ export default function App() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showNotification('Carta de Menú en Imagen HD (.JPG) con márgenes corregidos descargada.');
+      showNotification('Carta de Menú en Imagen HD (.JPG) descargada.');
     } catch (e) {
       handleDownloadCustomerMenuPDF();
     }
   };
 
-  // ==========================================
-  // LÓGICA DEL CARRITO Y FILTRADO EN TIEMPO REAL
-  // ==========================================
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const matchesCategory = posCategory === 'todos' || p.category === posCategory;
@@ -1693,6 +1632,114 @@ export default function App() {
   const cartTotalUSD = cartSubtotal + Number(selectedZone.fee || 0);
   const cartTotalBs = cartTotalUSD * Number(exchangeRate || 1);
 
+  // ==========================================
+  // NUEVO: HELPERS DE CORRELATIVO, DÍAS PENDIENTES Y COBRO DE CRÉDITO
+  // ==========================================
+  const getNextInvoiceNumber = (paymentCondition) => {
+    if (paymentCondition === 'credito') {
+      const creditNums = sales
+        .filter(s => s.invoiceNumber && s.invoiceNumber.startsWith('EPDS-CR-'))
+        .map(s => parseInt(s.invoiceNumber.replace('EPDS-CR-', ''), 10))
+        .filter(n => !isNaN(n));
+      const next = creditNums.length > 0 ? Math.max(...creditNums) + 1 : 1;
+      return `EPDS-CR-${String(next).padStart(4, '0')}`;
+    }
+    const cashNums = sales
+      .filter(s => s.invoiceNumber && s.invoiceNumber.startsWith('EPDS-') && !s.invoiceNumber.startsWith('EPDS-CR-'))
+      .map(s => parseInt(s.invoiceNumber.replace('EPDS-', ''), 10))
+      .filter(n => !isNaN(n));
+    const next = cashNums.length > 0 ? Math.max(1000, ...cashNums) + 1 : 1001;
+    return `EPDS-${next}`;
+  };
+
+  const getDaysPending = (dateStr) => {
+    try {
+      const saleDate = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diff = Math.floor((today.getTime() - saleDate.getTime()) / (1000 * 60 * 60 * 24));
+      return Math.max(0, diff);
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const getDaysPendingBadge = (days) => {
+    if (days <= 3) return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+    if (days <= 7) return 'bg-amber-100 text-amber-800 border-amber-300';
+    if (days <= 15) return 'bg-orange-100 text-orange-800 border-orange-300';
+    return 'bg-red-100 text-red-800 border-red-300';
+  };
+
+  const openCreditPaymentModal = (sale) => {
+    setCreditPaymentModal({
+      isOpen: true,
+      saleId: sale.id,
+      invoiceNumber: sale.invoiceNumber,
+      customerName: sale.customerName,
+      totalUSD: Number(sale.total || 0),
+      daysPending: getDaysPending(sale.date),
+      paymentMethod: 'Pago Móvil',
+      reference: '',
+      senderName: sale.customerName || '',
+      senderDocument: sale.customerDocument || '',
+      senderBank: '0102 - Banco de Venezuela (BDV)',
+      senderPhone: sale.customerPhone || '',
+      notes: ''
+    });
+  };
+
+  const handleConfirmCreditPayment = (e) => {
+    e.preventDefault();
+    if (!creditPaymentModal.reference.trim()) {
+      showNotification('Ingresa el número de referencia del pago.', 'error');
+      return;
+    }
+    const paidAt = new Date().toISOString();
+    setSales(prev =>
+      prev.map(s =>
+        s.id === creditPaymentModal.saleId
+          ? {
+              ...s,
+              creditPaid: true,
+              creditPaidDate: paidAt,
+              paymentMethod: `${creditPaymentModal.paymentMethod} (Crédito Liquidado)`,
+              paymentDetails: {
+                ...s.paymentDetails,
+                reference: creditPaymentModal.reference,
+                senderName: creditPaymentModal.senderName,
+                senderDocument: creditPaymentModal.senderDocument,
+                senderBank: creditPaymentModal.senderBank,
+                senderPhone: creditPaymentModal.senderPhone,
+                paidAt,
+                paidNotes: creditPaymentModal.notes || ''
+              }
+            }
+          : s
+      )
+    );
+    showNotification(`Factura ${creditPaymentModal.invoiceNumber} cobrada y liberada correctamente.`);
+    setCreditPaymentModal(prev => ({ ...prev, isOpen: false, saleId: null }));
+  };
+
+  const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
+    const paidAt = new Date().toISOString();
+    setSales(prev =>
+      prev.map(s =>
+        s.id === saleId
+          ? {
+              ...s,
+              creditPaid: true,
+              creditPaidDate: paidAt,
+              paymentMethod: `${method} (Crédito Liquidado)`,
+              paymentDetails: { ...s.paymentDetails, reference: ref, paidAt }
+            }
+          : s
+      )
+    );
+    showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
+  };
+
   // Emitir Factura
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -1723,15 +1770,9 @@ export default function App() {
       .filter(Boolean)
       .join(' | ');
 
-    const countContado = sales.filter(s => s.paymentCondition === 'contado').length;
-    const countCredito = sales.filter(s => s.paymentCondition === 'credito').length;
-    const assignedInvoiceNumber = paymentCondition === 'credito' 
-      ? `CRED-${1001 + countCredito}` 
-      : `EPDS-${1001 + countContado}`;
-    
     const newInvoice = {
       id: `sale_${Date.now()}`,
-      invoiceNumber: `EPDS-${1001 + sales.length}`,
+      invoiceNumber: getNextInvoiceNumber(paymentCondition),
       date: new Date().toISOString().split('T')[0],
       timestamp: new Date().toISOString(),
       cashier: currentUser.username,
@@ -1763,7 +1804,6 @@ export default function App() {
       notes: orderNotes
     };
 
-    // Descontar stock del inventario
     setProducts(prev =>
       prev.map(prod => {
         const soldItem = cart.find(i => i.productId === prod.id);
@@ -1772,7 +1812,6 @@ export default function App() {
       })
     );
 
-    // Actualizar dirección del cliente si fue modificada
     setCustomers(prev =>
       prev.map(c =>
         c.id === selectedCustomerId
@@ -1789,9 +1828,6 @@ export default function App() {
     showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
   };
 
-  // ==========================================
-  // GESTIÓN DE CLIENTES, RUTAS DE ENVÍO, CRÉDITOS Y PRODUCTOS
-  // ==========================================
   const handleSaveCustomer = (e) => {
     e.preventDefault();
     if (!newCustomerForm.name.trim() || !newCustomerForm.address.trim()) {
@@ -1839,25 +1875,6 @@ export default function App() {
     setSelectedZoneId(createdZone.id);
     setNewZoneForm({ name: '', fee: '' });
     showNotification(`Ruta "${createdZone.name}" ($${createdZone.fee.toFixed(2)}) registrada.`);
-  };
-
-  const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
-    setSales(prev =>
-      prev.map(s =>
-        s.id === saleId
-          ? {
-              ...s,
-              creditPaid: true,
-              paymentMethod: `${method} (Crédito Liquidado)`,
-              paymentDetails: {
-                ...s.paymentDetails,
-                reference: ref
-              }
-            }
-          : s
-      )
-    );
-    showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
   const handleImageUpload = (e) => {
@@ -1946,9 +1963,6 @@ export default function App() {
     });
   };
 
-  // ==========================================
-  // REGISTRO DE GASTOS DE INSUMOS E INVERSIÓN CON MEMORIA INTELIGENTE
-  // ==========================================
   const handleSelectSupplyFromMemory = (item) => {
     setExpenseForm(prev => ({
       ...prev,
@@ -1990,7 +2004,6 @@ export default function App() {
       consumedPercent: Number(expenseForm.consumedPercent || 0)
     };
 
-    // Guardar en la memoria de productos/insumos si es nuevo o actualizarlo
     setSupplyCatalog(prev => {
       const exists = prev.some(i => i.name.toLowerCase() === cleanCategory.toLowerCase());
       if (exists) return prev;
@@ -2005,7 +2018,6 @@ export default function App() {
       ];
     });
 
-    // Guardar en la memoria de comercios/proveedores si es nuevo
     setSupplierCatalog(prev => {
       const exists = prev.some(s => s.toLowerCase() === cleanSupplier.toLowerCase());
       if (exists) return prev;
@@ -2026,9 +2038,6 @@ export default function App() {
     showNotification(`Compra de "${cleanCategory}" en "${cleanSupplier}" guardada en memoria.`);
   };
 
-  // ==========================================
-  // CÁLCULOS DE KPIS, RENTABILIDAD Y SISTEMA DE ALARMAS
-  // ==========================================
   const kpiMetrics = useMemo(() => {
     const totalSalesRevenue = sales.reduce((acc, s) => acc + Number(s.total || 0), 0);
     const totalFoodRevenue = sales.reduce((acc, s) => acc + Number(s.subtotal || 0), 0);
@@ -2057,16 +2066,13 @@ export default function App() {
     const roiProgressPct =
       totalInitialInvestment > 0 ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100)) : 100;
 
-    // Total de unidades vendidas para comparar contra rendimiento de insumos
     const totalUnitsSold = sales.reduce(
       (acc, s) => acc + s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0),
       0
     );
 
-    // ALARMAS INTELIGENTES:
     const alarms = [];
 
-    // 1. Alarma de stock bajo o reposición urgente
     products.forEach(p => {
       if (Number(p.stock) <= Number(p.minStock)) {
         alarms.push({
@@ -2078,7 +2084,6 @@ export default function App() {
       }
     });
 
-    // 2. Alarma de consumo excesivo de insumos en función de las ventas realizadas
     expenses
       .filter(e => e.type === 'insumo' && Number(e.expectedYieldUnits) > 0)
       .forEach(e => {
@@ -2093,7 +2098,6 @@ export default function App() {
         }
       });
 
-    // 3. Alarma de margen bajo en productos
     products.forEach(p => {
       const margin = ((p.price - p.cost) / p.price) * 100;
       if (margin < 45) {
@@ -2106,7 +2110,6 @@ export default function App() {
       }
     });
 
-    // 4. Alarma de cuentas por cobrar
     if (pendingCredit > 0) {
       alarms.push({
         id: 'alm_credit_pending',
@@ -2134,9 +2137,6 @@ export default function App() {
     };
   }, [sales, expenses, products]);
 
-  // ==========================================
-  // EXPORTACIÓN A EXCEL (CSV) Y RESPALDO JSON
-  // ==========================================
   const exportToExcelCSV = (filename, headers, rows) => {
     const BOM = '\uFEFF';
     const csvLines = [
@@ -2225,7 +2225,7 @@ export default function App() {
   const handleLoadDemoSales = () => {
     const demoSale = {
       id: `sale_${Date.now()}`,
-      invoiceNumber: `EPDS-${1001 + sales.length}`,
+      invoiceNumber: getNextInvoiceNumber('contado'),
       date: new Date().toISOString().split('T')[0],
       timestamp: new Date().toISOString(),
       cashier: currentUser?.username || 'Michelle Sifontes',
@@ -2859,11 +2859,7 @@ export default function App() {
     );
   }
 
-  // Ventas filtradas para el Cierre Diario
-  const dailyClosingSales = sales.filter(s => 
-    s.date === closingDate && 
-    (closingFilter === 'todas' || s.paymentCondition === closingFilter)
-  );
+  const dailyClosingSales = sales.filter(s => s.date === closingDate);
   const dailyProductSummary = {};
   dailyClosingSales.forEach(s => {
     s.items.forEach(item => {
@@ -2877,7 +2873,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col [&_*]:scrollbar-thin [&_*]:scrollbar-thumb-stone-300 [&_*]:scrollbar-track-transparent">
-      {/* NOTIFICACIÓN FLOTANTE */}
       {notification && (
         <div
           className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-2.5 text-xs font-bold transition-all ${
@@ -2891,7 +2886,6 @@ export default function App() {
         </div>
       )}
 
-      {/* BARRA SUPERIOR */}
       <header className="bg-stone-900 text-white shadow-lg sticky top-0 z-30 print:hidden">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -2911,9 +2905,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Controles Rápidos Superiores */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Tasa BCV / Paralelo con Sincronización Automática */}
             <div className="flex items-center gap-1.5 bg-stone-800 border border-stone-700 px-3 py-1.5 rounded-xl text-xs">
               <div className="flex flex-col">
                 <span className="text-amber-400 font-extrabold text-[10px] leading-tight">
@@ -2939,7 +2931,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Botón de Alarmas Activas */}
             <button
               onClick={() => setActiveTab('kpis')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
@@ -2952,7 +2943,6 @@ export default function App() {
               <span>Alarmas ({kpiMetrics.alarms.length})</span>
             </button>
 
-            {/* Botón Destacado: Menú Digital Descargable y Enlace para Clientes */}
             <button
               onClick={() => setShowShareMenuModal(true)}
               className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-black flex items-center gap-1.5 shadow transition"
@@ -2961,7 +2951,6 @@ export default function App() {
               <span>Menú Clientes (Descargar / Enlace)</span>
             </button>
 
-            {/* Botón Rápido: Cómo Poner en Marcha */}
             <button
               onClick={() => setActiveTab('architecture')}
               className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-extrabold flex items-center gap-1.5 transition"
@@ -2970,7 +2959,6 @@ export default function App() {
               <span>Probar / Usar Fuera del Chat</span>
             </button>
 
-            {/* Cerrar Sesión / Cambiar entre Michelle y Jhonny */}
             <button
               onClick={() => setCurrentUser(null)}
               className="px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-red-600/80 text-stone-300 hover:text-white text-xs font-bold flex items-center gap-1 transition"
@@ -2982,7 +2970,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* BARRA DE NAVEGACIÓN DE MÓDULOS */}
         <div className="bg-stone-950/90 border-t border-stone-800">
           <div className="max-w-7xl mx-auto px-4 flex items-center gap-1 overflow-x-auto py-1.5">
             {[
@@ -3016,16 +3003,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-7xl w-full mx-auto px-4 py-5 flex-1">
-        {/* ========================================== */}
-        {/* MÓDULO 1: FACTURACIÓN Y POS DIGITAL DELIVERY */}
-        {/* ========================================== */}
         {activeTab === 'pos' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:h-[calc(100vh-140px)] lg:overflow-hidden">
-            {/* COLUMNA IZQUIERDA (7 cols): MENÚ DIGITAL CON BARRA DE DESPLAZAMIENTO INDEPENDIENTE */}
             <div className="lg:col-span-7 lg:h-full lg:overflow-y-auto lg:pr-2 space-y-4 scrollbar-thin">
-              {/* Buscador en tiempo real letra por letra + Filtro de Etapas (Fijo arriba del menú) */}
               <div className="bg-white p-4 rounded-3xl shadow-sm border border-stone-200 space-y-3 sticky top-0 z-10">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="relative flex-1 min-w-[220px]">
@@ -3051,7 +3032,6 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Pestañas de Clasificación del Menú */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                   {CATEGORIES.map(cat => (
                     <button
@@ -3069,7 +3049,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Tarjetas de Productos del Menú Digital (1 Clic para Agregar) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 pb-4">
                 {filteredProducts.map(prod => {
                   const inCart = cart.find(i => i.productId === prod.id);
@@ -3139,7 +3118,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* COLUMNA DERECHA (5 cols): COMANDA / FACTURA DELIVERY CON BARRA DE DESPLAZAMIENTO PROPIA */}
             <div className="lg:col-span-5 lg:h-full lg:overflow-y-auto lg:pl-1 pb-4 scrollbar-thin">
               <div className="bg-white rounded-3xl shadow-md border border-stone-200 p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-stone-200 pb-3">
@@ -3161,7 +3139,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Selección de Cliente y Dirección Obligatoria */}
                 <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-extrabold text-stone-700 flex items-center gap-1">
@@ -3219,7 +3196,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Lista de Productos en la Factura */}
                 <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
                   {cart.length === 0 ? (
                     <div className="text-center py-6 text-xs text-stone-400 border border-dashed border-stone-200 rounded-2xl">
@@ -3262,7 +3238,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Modalidad de Pago: Contado vs Crédito y Datos de Pago Móvil */}
                 <div className="space-y-2.5 pt-2 border-t border-stone-200">
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -3358,7 +3333,6 @@ export default function App() {
                             />
                           </div>
 
-                          {/* Campo dinámico: Si es Binance muestra Usuario Binance, si es Banco muestra desplegable de todos los bancos de Venezuela + opción de editar */}
                           <div>
                             {selectedPaymentMethod.toLowerCase().includes('binance') ? (
                               <>
@@ -3468,7 +3442,6 @@ export default function App() {
                   />
                 </div>
 
-                {/* Totales de la Factura */}
                 <div className="bg-stone-900 text-white p-4 rounded-2xl space-y-1.5">
                   <div className="flex justify-between text-xs text-stone-400">
                     <span>Subtotal Comida:</span>
@@ -3501,12 +3474,8 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 2: MENÚ DIGITAL, CARGA DE FOTOS E INVENTARIO */}
-        {/* ========================================== */}
         {activeTab === 'catalog' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Formulario para Crear / Editar Producto y Subir Imagen */}
             <div className="lg:col-span-4">
               <form
                 onSubmit={handleSaveProduct}
@@ -3622,7 +3591,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Carga de Imagen desde Dispositivo o URL */}
                 <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
                   <label className="block text-xs font-extrabold text-amber-900">
                     📸 Fotografía del Producto (Subir desde Celular/PC):
@@ -3704,7 +3672,6 @@ export default function App() {
               </form>
             </div>
 
-            {/* Listado Completo del Menú por Etapas */}
             <div className="lg:col-span-8 space-y-4">
               <div className="bg-white p-4 rounded-3xl border border-stone-200 flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -3835,13 +3802,9 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 3: CLIENTES, RUTAS DE ENVÍO Y CUENTAS POR COBRAR (CRÉDITO) */}
-        {/* ========================================== */}
         {activeTab === 'customers' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Tarifador de Rutas Delivery */}
               <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
                 <div>
                   <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
@@ -3910,7 +3873,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Control de Ventas a Crédito Pendientes de Cobro */}
               <div className="lg:col-span-7 bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -3921,6 +3883,10 @@ export default function App() {
                       Liquida aquí los pedidos entregados bajo modalidad a crédito cuando el cliente realice el Pago Móvil.
                     </p>
                   </div>
+                  <div className="px-3 py-1.5 rounded-2xl bg-amber-100 text-amber-900 font-black text-xs">
+                    Por Cobrar: ${kpiMetrics.pendingCredit.toFixed(2)}
+                  </div>
+                </div>
 
                 <div className="space-y-2.5">
                   {sales.filter(s => s.paymentCondition === 'credito' && !s.creditPaid).length === 0 ? (
@@ -3931,42 +3897,40 @@ export default function App() {
                     sales
                       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
                       .map(s => {
-                        const pendingDays = Math.floor((new Date() - new Date(s.date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+                        const daysPending = getDaysPending(s.date);
                         return (
                           <div
                             key={s.id}
                             className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300 flex flex-wrap items-center justify-between gap-3 text-xs"
                           >
-                            <div>
-                              <div className="font-black text-stone-900">
-                                {s.invoiceNumber} — {s.customerName} ({s.customerPhone})
+                            <div className="flex-1 min-w-[200px]">
+                              <div className="font-black text-stone-900 flex flex-wrap items-center gap-1.5">
+                                <span>{s.invoiceNumber} — {s.customerName} ({s.customerPhone})</span>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${getDaysPendingBadge(daysPending)}`}>
+                                  ⏱ {daysPending} {daysPending === 1 ? 'día pendiente' : 'días pendientes'}
+                                </span>
                               </div>
                               <div className="text-stone-600 text-[11px]">{s.deliveryAddress}</div>
                               <div className="text-[11px] text-amber-900 font-bold mt-1">
                                 Fecha: {s.date} | Monto Pendiente: ${s.total.toFixed(2)} (Bs.{' '}
                                 {(s.total * exchangeRate).toFixed(2)})
                               </div>
-                              <div className={`text-[11px] font-black mt-1 ${pendingDays > 3 ? 'text-red-600' : 'text-amber-700'}`}>
-                                ⏱️ {pendingDays} {pendingDays === 1 ? 'día pendiente' : 'días pendientes'}
-                              </div>
                             </div>
                             <button
                               type="button"
-                              onClick={() => {
-                                setPayCreditModal(s);
-                                setPayCreditForm({ method: 'Pago Móvil', reference: '', bank: s.paymentDetails?.senderBank || '' });
-                              }}
-                              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow"
+                              onClick={() => openCreditPaymentModal(s)}
+                              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow flex items-center gap-1"
                             >
-                              Asignar Pago
+                              <DollarSign className="w-3.5 h-3.5" /> Registrar Cobro
                             </button>
                           </div>
                         );
                       })
                   )}
-                </div>            
+                </div>
+              </div>
+            </div>
 
-            {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -4066,9 +4030,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 4: GASTOS DE INSUMOS E INVERSIÓN INICIAL */}
-        {/* ========================================== */}
         {activeTab === 'expenses' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-4">
@@ -4100,7 +4061,6 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* CAMPO INTELIGENTE 1: PRODUCTO / INSUMO CON SEMEJANZAS POR ESCRITURA Y DESPLEGABLE */}
                 <div className="relative">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-stone-700">
@@ -4198,7 +4158,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* CAMPO INTELIGENTE 2: COMERCIO / PROVEEDOR CON SEMEJANZAS POR ESCRITURA Y DESPLEGABLE */}
                 <div className="relative">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-stone-700">
@@ -4477,9 +4436,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 5: CIERRE DIARIO DE VENTAS */}
-        {/* ========================================== */}
         {activeTab === 'closing' && (
           <div className="space-y-5">
             <div className="bg-white p-5 rounded-3xl border border-stone-200 flex flex-wrap items-center justify-between gap-4">
@@ -4487,20 +4443,6 @@ export default function App() {
                 <h2 className="text-lg font-black text-stone-900">
                   Cierre de Ventas Diario — "El Punto del Sabor"
                 </h2>
-              <div>
-                <h2 className="text-lg font-black text-stone-900">
-                  Cierre de Ventas Diario — "El Punto del Sabor"
-                </h2>
-                <p className="text-xs text-stone-500">
-                  Detalle de todos los productos vendidos, montos percibidos y referencias de Pago Móvil.
-                </p>
-                {/* BOTONES DE FILTRO AGREGADOS */}
-                <div className="flex gap-2 mt-3">
-                  <button onClick={() => setClosingFilter('todas')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'todas' ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-600'}`}>Todas</button>
-                  <button onClick={() => setClosingFilter('contado')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'contado' ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-600'}`}>Contado</button>
-                  <button onClick={() => setClosingFilter('credito')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'credito' ? 'bg-amber-600 text-white' : 'bg-stone-200 text-stone-600'}`}>Crédito</button>
-                </div>
-              </div>        
                 <p className="text-xs text-stone-500">
                   Detalle de todos los productos vendidos, montos percibidos y referencias de Pago Móvil.
                 </p>
@@ -4555,7 +4497,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Resumen de Productos Vendidos en el Día */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
                 <h3 className="font-black text-sm text-stone-900">
@@ -4588,7 +4529,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Facturas Emitidas en el Día */}
               <div className="lg:col-span-7 bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-black text-sm text-stone-900">
@@ -4613,74 +4553,151 @@ export default function App() {
                     </button>
                   )}
                 </div>
+
+                {/* FILTRO DE FACTURAS: CONTADO / CRÉDITO */}
+                <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-stone-200">
+                  <span className="text-[11px] font-bold text-stone-500 mr-1">Filtrar por tipo:</span>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceFilterType('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      invoiceFilterType === 'all'
+                        ? 'bg-stone-900 text-amber-400 border-stone-900'
+                        : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'
+                    }`}
+                  >
+                    Todas ({dailyClosingSales.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceFilterType('contado')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      invoiceFilterType === 'contado'
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
+                    }`}
+                  >
+                    💵 Contado ({dailyClosingSales.filter(s => s.paymentCondition === 'contado').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceFilterType('credito')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      invoiceFilterType === 'credito'
+                        ? 'bg-amber-600 text-white border-amber-600'
+                        : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-50'
+                    }`}
+                  >
+                    📝 Crédito ({dailyClosingSales.filter(s => s.paymentCondition === 'credito').length})
+                  </button>
+                </div>
+
                 <div className="space-y-2.5">
-                  {dailyClosingSales.map(s => (
-                    <div
-                      key={s.id}
-                      className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex flex-wrap items-center justify-between gap-2 text-xs"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="font-black text-stone-900">
-                          {s.invoiceNumber} — {s.customerName}
+                  {(() => {
+                    const filteredClosingSales = dailyClosingSales.filter(s => {
+                      if (invoiceFilterType === 'all') return true;
+                      return s.paymentCondition === invoiceFilterType;
+                    });
+
+                    if (filteredClosingSales.length === 0) {
+                      return (
+                        <div className="p-6 text-center text-xs text-stone-400 bg-stone-50 rounded-2xl">
+                          No hay facturas {invoiceFilterType === 'all' ? '' : invoiceFilterType === 'contado' ? 'de contado' : 'a crédito'} en esta fecha.
                         </div>
-                        <div className="text-[11px] text-stone-600">📍 {s.deliveryAddress}</div>
-                        <div className="text-[11px] text-stone-500">
-                          💳 <strong>{s.paymentMethod}</strong> | Ref:{' '}
-                          <strong>{s.paymentDetails?.reference}</strong> | Emisor:{' '}
-                          <strong>{s.paymentDetails?.senderName || s.paymentDetails?.sender}</strong>{' '}
-                          ({s.paymentDetails?.senderDocument || 'S/C'} •{' '}
-                          {s.paymentDetails?.senderBank || ''})
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
-                          <div className="font-black text-sm text-stone-900">
-                            ${s.total.toFixed(2)}
-                          </div>
-                          <div className="text-[10px] text-stone-500">
-                            Bs. {(s.total * exchangeRate).toFixed(2)}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setLastInvoiceModal(s)}
-                          className="p-2 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800"
-                          title="Ver Factura"
+                      );
+                    }
+
+                    return filteredClosingSales.map(s => {
+                      const isCredit = s.paymentCondition === 'credito';
+                      const isPaid = s.creditPaid;
+                      const daysPending = isCredit && !isPaid ? getDaysPending(s.date) : 0;
+                      return (
+                        <div
+                          key={s.id}
+                          className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-2 text-xs ${
+                            isCredit && !isPaid ? 'bg-amber-50 border-amber-300' : 'bg-stone-50 border-stone-200'
+                          }`}
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            requestAuthorizedDelete(
-                              `Eliminar Factura ${s.invoiceNumber}`,
-                              `¿Confirmas eliminar la factura ${s.invoiceNumber} de ${s.customerName} por $${s.total.toFixed(2)}?`,
-                              () => {
-                                setSales(prev => prev.filter(item => item.id !== s.id));
-                                showNotification(`Factura ${s.invoiceNumber} eliminada.`);
+                          <div className="space-y-0.5 flex-1 min-w-[200px]">
+                            <div className="font-black text-stone-900 flex flex-wrap items-center gap-1.5">
+                              <span>{s.invoiceNumber} — {s.customerName}</span>
+                              {isCredit && !isPaid && (
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${getDaysPendingBadge(daysPending)}`}>
+                                  ⏱ {daysPending} {daysPending === 1 ? 'día pendiente' : 'días pendientes'}
+                                </span>
+                              )}
+                              {isCredit && isPaid && (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  ✅ Pagada
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-stone-600">📍 {s.deliveryAddress}</div>
+                            <div className="text-[11px] text-stone-500">
+                              💳 <strong>{s.paymentMethod}</strong> | Ref:{' '}
+                              <strong>{s.paymentDetails?.reference}</strong> | Emisor:{' '}
+                              <strong>{s.paymentDetails?.senderName || s.paymentDetails?.sender}</strong>{' '}
+                              ({s.paymentDetails?.senderDocument || 'S/C'} •{' '}
+                              {s.paymentDetails?.senderBank || ''})
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <div className="font-black text-sm text-stone-900">
+                                ${s.total.toFixed(2)}
+                              </div>
+                              <div className="text-[10px] text-stone-500">
+                                Bs. {(s.total * exchangeRate).toFixed(2)}
+                              </div>
+                            </div>
+                            {isCredit && !isPaid && (
+                              <button
+                                type="button"
+                                onClick={() => openCreditPaymentModal(s)}
+                                className="px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow flex items-center gap-1"
+                                title="Cobrar y liberar factura a crédito"
+                              >
+                                <DollarSign className="w-3.5 h-3.5" /> Cobrar
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setLastInvoiceModal(s)}
+                              className="p-2 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800"
+                              title="Ver Factura"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                requestAuthorizedDelete(
+                                  `Eliminar Factura ${s.invoiceNumber}`,
+                                  `¿Confirmas eliminar la factura ${s.invoiceNumber} de ${s.customerName} por $${s.total.toFixed(2)}?`,
+                                  () => {
+                                    setSales(prev => prev.filter(item => item.id !== s.id));
+                                    showNotification(`Factura ${s.invoiceNumber} eliminada.`);
+                                  }
+                                )
                               }
-                            )
-                          }
-                          className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600"
-                          title="Eliminar factura (Requiere Clave Especial)"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600"
+                              title="Eliminar factura (Requiere Clave Especial)"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 6: KPIS, RENTABILIDAD Y ALARMAS INTELIGENTES */}
-        {/* ========================================== */}
         {activeTab === 'kpis' && (
           <div className="space-y-6">
-            {/* Tarjetas de KPIs Financieros con Porcentajes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm">
                 <span className="text-xs font-bold text-stone-500">Ingresos Brutos por Ventas</span>
@@ -4733,7 +4750,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Centro de Alarmas y Niveles de Atención (Consumo Excesivo / Reposición) */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
               <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-600" /> Sistema de Alarmas de Consumo Excesivo, Reposición y Rentabilidad
@@ -4755,7 +4771,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Hoja de Ruta de las 5 Etapas del Emprendimiento */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
               <h3 className="text-base font-black text-stone-900">
                 📈 Plan Maestro de Crecimiento por Etapas ("El Punto del Sabor")
@@ -4778,12 +4793,8 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 7: PROBAR Y PONER EN MARCHA FUERA DEL CHAT */}
-        {/* ========================================== */}
         {activeTab === 'architecture' && (
           <div className="space-y-6">
-            {/* Simulador de 1 Clic */}
             <div className="bg-white p-6 rounded-3xl border-2 border-amber-500 shadow-sm space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -4816,7 +4827,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Guía Paso a Paso Fuera del Chat */}
             <div className="bg-stone-900 text-white p-6 rounded-3xl space-y-4">
               <h3 className="text-lg font-black text-amber-400">
                 🚀 ¿Cómo ponerlo en marcha fuera de este chat en tu Celular y PC?
@@ -4851,12 +4861,8 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* MÓDULO 8: USUARIOS (CAMBIO DE CLAVE) Y TIPOS DE PAGO */}
-        {/* ========================================== */}
         {activeTab === 'settings' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Cambio de Clave del Usuario Actual */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
               <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
                 <Lock className="w-5 h-5 text-amber-600" /> Seguridad y Cambio de Clave ({currentUser.username})
@@ -4922,7 +4928,6 @@ export default function App() {
                 </button>
               </form>
 
-              {/* Configuración de la Clave Especial para Eliminar Registros */}
               <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-black text-red-700 flex items-center gap-1.5">
@@ -4961,7 +4966,6 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Registro de Nuevos Usuarios Operadores del Sistema */}
               <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
                 <h3 className="text-sm font-black text-stone-900 flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-amber-600" /> Usuarios Registrados en el Sistema ({users.length})
@@ -5030,7 +5034,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Tipos de Pago Configurables */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
               <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-amber-600" /> Métodos de Pago Aceptados
@@ -5081,9 +5084,6 @@ export default function App() {
         )}
       </main>
 
-      {/* ========================================== */}
-      {/* MODAL PARA COMPARTIR ENLACE DIGITAL Y CARTA */}
-      {/* ========================================== */}
       {showShareMenuModal && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
@@ -5124,7 +5124,6 @@ export default function App() {
                 />
               </div>
 
-              {/* ENLACE WEB OFICIAL PARA REDES SOCIALES Y WHATSAPP */}
               <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
                 <label className="block font-extrabold text-amber-950">
                   🌐 Enlace Web (URL) para Redes Sociales y WhatsApp:
@@ -5180,9 +5179,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* MODAL DE SEGURIDAD CON CLAVE ESPECIAL PARA ELIMINAR */}
-      {/* ========================================== */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-red-500">
@@ -5247,9 +5243,213 @@ export default function App() {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* MODAL DE NUEVO CLIENTE RÁPIDO */}
-      {/* ========================================== */}
+      {/* NUEVO MODAL: COBRO DE FACTURA A CRÉDITO */}
+      {creditPaymentModal.isOpen && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-stone-900">
+                    Cobrar Factura a Crédito
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {creditPaymentModal.invoiceNumber} — {creditPaymentModal.customerName}
+                  </p>
+                  <p className="text-[11px] font-bold text-amber-700 mt-0.5">
+                    ⏱ {creditPaymentModal.daysPending} {creditPaymentModal.daysPending === 1 ? 'día pendiente' : 'días pendientes'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreditPaymentModal(prev => ({ ...prev, isOpen: false }))}
+                className="text-stone-400 hover:text-stone-700 font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-amber-900">Monto a cobrar:</span>
+                <span className="font-black text-xl text-amber-900">
+                  ${creditPaymentModal.totalUSD.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-right text-[11px] text-amber-700 font-bold">
+                Bs. {(creditPaymentModal.totalUSD * exchangeRate).toFixed(2)}
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmCreditPayment} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                  Método de Pago Recibido:
+                </label>
+                <select
+                  value={creditPaymentModal.paymentMethod}
+                  onChange={e => {
+                    const m = e.target.value;
+                    const isBinOrCash =
+                      m.toLowerCase().includes('binance') ||
+                      m.toLowerCase().includes('efectivo') ||
+                      m.toLowerCase().includes('zelle');
+                    setCreditPaymentModal(prev => ({
+                      ...prev,
+                      paymentMethod: m,
+                      senderBank: isBinOrCash ? '' : '0102 - Banco de Venezuela (BDV)'
+                    }));
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900"
+                >
+                  {paymentMethods.map(pm => (
+                    <option key={pm.id} value={pm.name}>
+                      {pm.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                  🔢 N° de Referencia / ID de Operación *
+                </label>
+                <input
+                  type="text"
+                  value={creditPaymentModal.reference}
+                  onChange={e =>
+                    setCreditPaymentModal(prev => ({ ...prev, reference: e.target.value }))
+                  }
+                  placeholder="Ej: 849201"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                    👤 Nombre del Emisor:
+                  </label>
+                  <input
+                    type="text"
+                    value={creditPaymentModal.senderName}
+                    onChange={e =>
+                      setCreditPaymentModal(prev => ({ ...prev, senderName: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                    🪪 Cédula / RIF Emisor:
+                  </label>
+                  <input
+                    type="text"
+                    value={creditPaymentModal.senderDocument}
+                    onChange={e =>
+                      setCreditPaymentModal(prev => ({ ...prev, senderDocument: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                  🏦 Banco / Usuario Emisor:
+                </label>
+                {creditPaymentModal.paymentMethod.toLowerCase().includes('binance') ? (
+                  <input
+                    type="text"
+                    value={creditPaymentModal.senderBank}
+                    onChange={e =>
+                      setCreditPaymentModal(prev => ({ ...prev, senderBank: e.target.value }))
+                    }
+                    placeholder="Usuario / correo / ID Binance"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-amber-400 text-xs font-bold bg-white text-stone-900"
+                  />
+                ) : creditPaymentModal.paymentMethod.toLowerCase().includes('efectivo') ? (
+                  <input
+                    type="text"
+                    value={creditPaymentModal.senderBank}
+                    onChange={e =>
+                      setCreditPaymentModal(prev => ({ ...prev, senderBank: e.target.value }))
+                    }
+                    placeholder="Detalle del efectivo recibido (opcional)"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                  />
+                ) : (
+                  <select
+                    value={creditPaymentModal.senderBank}
+                    onChange={e =>
+                      setCreditPaymentModal(prev => ({ ...prev, senderBank: e.target.value }))
+                    }
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                  >
+                    <option value="">-- Seleccionar banco --</option>
+                    {VENEZUELAN_BANKS.map(b => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                  📱 Teléfono Emisor:
+                </label>
+                <input
+                  type="text"
+                  value={creditPaymentModal.senderPhone}
+                  onChange={e =>
+                    setCreditPaymentModal(prev => ({ ...prev, senderPhone: e.target.value }))
+                  }
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                  📝 Nota (Opcional):
+                </label>
+                <input
+                  type="text"
+                  value={creditPaymentModal.notes}
+                  onChange={e =>
+                    setCreditPaymentModal(prev => ({ ...prev, notes: e.target.value }))
+                  }
+                  placeholder="Ej: Pago recibido con retraso, abono parcial..."
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow flex items-center justify-center gap-1"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Confirmar Pago y Liberar Factura
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreditPaymentModal(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showQuickCustomerModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
@@ -5311,9 +5511,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* MODAL DE FACTURA DE VENTA / COMANDA DELIVERY */}
-      {/* ========================================== */}
       {lastInvoiceModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
@@ -5425,84 +5622,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* ========================================== */}
-      {/* MODAL PARA LIQUIDAR FACTURA A CRÉDITO */}
-      {/* ========================================== */}
-      {payCreditModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-base font-black text-stone-900">
-              Liquidar Factura a Crédito: {payCreditModal.invoiceNumber}
-            </h3>
-            <div className="text-xs text-stone-600 bg-stone-50 p-3 rounded-xl border border-stone-200">
-              <strong>Cliente:</strong> {payCreditModal.customerName} <br/>
-              <strong>Monto a pagar:</strong> ${payCreditModal.total.toFixed(2)}
-            </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              setSales(prev => prev.map(s => s.id === payCreditModal.id ? {
-                ...s,
-                creditPaid: true,
-                paymentMethod: payCreditForm.method,
-                paymentDetails: {
-                  ...s.paymentDetails,
-                  reference: payCreditForm.reference || 'Sin referencia',
-                  senderBank: payCreditForm.bank || 'N/A'
-                }
-              } : s));
-              showNotification(`Factura ${payCreditModal.invoiceNumber} liquidada con éxito.`);
-              setPayCreditModal(null);
-            }} className="space-y-3">
-              
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Método de Pago Recibido:</label>
-                <select
-                  value={payCreditForm.method}
-                  onChange={e => setPayCreditForm({ ...payCreditForm, method: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold"
-                >
-                  {paymentMethods.map(pm => (
-                    <option key={pm.id} value={pm.name}>{pm.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Referencia / Comprobante:</label>
-                <input
-                  type="text"
-                  required
-                  value={payCreditForm.reference}
-                  onChange={e => setPayCreditForm({ ...payCreditForm, reference: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
-                  placeholder="Ej: 849201"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Banco / Origen (Opcional):</label>
-                <input
-                  type="text"
-                  value={payCreditForm.bank}
-                  onChange={e => setPayCreditForm({ ...payCreditForm, bank: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
-                  placeholder="Banco desde donde pagó"
-                />
-              </div>
-
-                <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs">
-                  Confirmar Pago
-                </button>
-                <button type="button" onClick={() => setPayCreditModal(null)} className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs">
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
+}
