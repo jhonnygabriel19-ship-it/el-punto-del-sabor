@@ -1723,6 +1723,12 @@ export default function App() {
       .filter(Boolean)
       .join(' | ');
 
+    const countContado = sales.filter(s => s.paymentCondition === 'contado').length;
+    const countCredito = sales.filter(s => s.paymentCondition === 'credito').length;
+    const assignedInvoiceNumber = paymentCondition === 'credito' 
+      ? `CRED-${1001 + countCredito}` 
+      : `EPDS-${1001 + countContado}`;
+    
     const newInvoice = {
       id: `sale_${Date.now()}`,
       invoiceNumber: `EPDS-${1001 + sales.length}`,
