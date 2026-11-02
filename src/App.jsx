@@ -3935,29 +3935,43 @@ export default function App() {
                     sales
                       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
                       .map(s => (
-                        <div
-                            <div className="font-black text-stone-900">
-                              {s.invoiceNumber} — {s.customerName} ({s.customerPhone})
-                            </div>
-                            <div className="text-stone-600 text-[11px]">{s.deliveryAddress}</div>
-                            <div className="text-[11px] text-amber-900 font-bold mt-1">
-                              Fecha: {s.date} | Monto Pendiente: ${s.total.toFixed(2)} (Bs.{' '}
-                              {(s.total * exchangeRate).toFixed(2)})
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleMarkCreditPaid(s.id, 'Pago Móvil', 'Liquidado')}
-                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow"
+                        {
+                          const pendingDays = Math.floor((new Date() - new Date(s.date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+                          return (
+                          <div
+                            key={s.id}
+                            className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300 flex flex-wrap items-center justify-between gap-3 text-xs"
                           >
-                            Registrar Cobro
-                          </button>
-                        </div>                          
+                            <div>
+                              <div className="font-black text-stone-900">
+                                {s.invoiceNumber} — {s.customerName} ({s.customerPhone})
+                              </div>
+                              <div className="text-stone-600 text-[11px]">{s.deliveryAddress}</div>
+                              <div className="text-[11px] text-amber-900 font-bold mt-1">
+                                Fecha: {s.date} | Monto Pendiente: ${s.total.toFixed(2)} (Bs.{' '}
+                                {(s.total * exchangeRate).toFixed(2)})
+                              </div>
+                              <div className={`text-[11px] font-black mt-1 ${pendingDays > 3 ? 'text-red-600' : 'text-amber-700'}`}>
+                                ⏱️ {pendingDays} {pendingDays === 1 ? 'día pendiente' : 'días pendientes'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPayCreditModal(s);
+                                setPayCreditForm({ method: 'Pago Móvil', reference: '', bank: s.paymentDetails?.senderBank || '' });
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow"
+                            >
+                              Asignar Pago
+                            </button>
+                          </div>
+                        )}
                       ))
                   )}
                 </div>
               </div>
-            </div>
+            </div>                        
 
             {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
