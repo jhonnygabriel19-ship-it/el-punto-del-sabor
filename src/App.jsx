@@ -3921,19 +3921,9 @@ export default function App() {
                       Liquida aquí los pedidos entregados bajo modalidad a crédito cuando el cliente realice el Pago Móvil.
                     </p>
                   </div>
-                  <div className="px-3 py-1.5 rounded-2xl bg-amber-100 text-amber-900 font-black text-xs">
-                    Por Cobrar: ${kpiMetrics.pendingCredit.toFixed(2)}
-                  </div>
-                </div>
 
                 <div className="space-y-2.5">
                   {sales.filter(s => s.paymentCondition === 'credito' && !s.creditPaid).length === 0 ? (
-                    <div className="p-6 text-center text-xs text-stone-400 bg-stone-50 rounded-2xl">
-                      No hay facturas a crédito pendientes de cobro en este momento.
-                    </div>
-                  ) : (
-                    sales
-                      {sales.filter(s => s.paymentCondition === 'credito' && !s.creditPaid).length === 0 ? (
                     <div className="p-6 text-center text-xs text-stone-400 bg-stone-50 rounded-2xl">
                       No hay facturas a crédito pendientes de cobro en este momento.
                     </div>
@@ -3973,7 +3963,8 @@ export default function App() {
                           </div>
                         );
                       })
-                  )}            
+                  )}
+                </div>            
 
             {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
