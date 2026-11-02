@@ -908,8 +908,7 @@ export default function App() {
       setPaymentSenderBank(VENEZUELAN_BANKS[0]);
     }
   };
-
-  };
+  
   // ==========================================
   // Nuevos estados para Créditos y Filtros
   // ==========================================
