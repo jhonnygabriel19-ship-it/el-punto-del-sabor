@@ -3933,11 +3933,16 @@ export default function App() {
                     </div>
                   ) : (
                     sales
+                      {sales.filter(s => s.paymentCondition === 'credito' && !s.creditPaid).length === 0 ? (
+                    <div className="p-6 text-center text-xs text-stone-400 bg-stone-50 rounded-2xl">
+                      No hay facturas a crédito pendientes de cobro en este momento.
+                    </div>
+                  ) : (
+                    sales
                       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
-                      .map(s => (
-                        {
-                          const pendingDays = Math.floor((new Date() - new Date(s.date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
-                          return (
+                      .map(s => {
+                        const pendingDays = Math.floor((new Date() - new Date(s.date + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+                        return (
                           <div
                             key={s.id}
                             className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300 flex flex-wrap items-center justify-between gap-3 text-xs"
@@ -3963,15 +3968,12 @@ export default function App() {
                               }}
                               className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow"
                             >
-                              Asignar 
+                              Asignar Pago
                             </button>
                           </div>
-                        )}
-                      ))
-                  )}
-                </div>
-              </div>
-            </div>                                  
+                        );
+                      })
+                  )}            
 
             {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
