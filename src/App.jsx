@@ -571,8 +571,8 @@ const INITIAL_SALES = [
   }
 ];
 
-const CATEGORIES = [
-  { id: 'todos', label: 'Todos' },
+const DEFAULT_CATEGORIES = [
+  { id: 'todos', label: 'Todos', isFixed: true },
   { id: 'perros', label: '🌭 Perros Calientes' },
   { id: 'combos', label: '🥤 Combos con Refresco' },
   { id: 'hamburguesas', label: '🍔 Hamburguesas' },
@@ -580,6 +580,22 @@ const CATEGORIES = [
   { id: 'especialidades', label: '🧀 Tequeños y Tenders' },
   { id: 'postres', label: '🍨 Postres y Helados' },
   { id: 'refrescos', label: '🧊 Bebidas y Refrescos' }
+];
+
+const DEFAULT_PAYMENT_RECEIVERS = [
+  {
+    id: 'pr_1',
+    type: 'pago_movil',
+    holder: 'Michelle Sifontes',
+    bank: '0102 - Banco de Venezuela (BDV)',
+    phone: '0424-9043122',
+    document: 'V-21237816',
+    account: '',
+    binanceId: '',
+    email: '',
+    isActive: true,
+    showToCustomers: true
+  }
 ];
 
 const STAGES_INFO = [
@@ -670,7 +686,7 @@ export default function App() {
   const [deletePinAttempt, setDeletePinAttempt] = useState('');
   const [deletePinError, setDeletePinError] = useState('');
 
-  // NUEVO: Filtro de facturas (contado / crédito) y modal de cobro de factura a crédito
+  // Filtro de facturas (contado / crédito) y modal de cobro de factura a crédito
   const [invoiceFilterType, setInvoiceFilterType] = useState('all');
   const [creditPaymentModal, setCreditPaymentModal] = useState({
     isOpen: false,
@@ -687,6 +703,32 @@ export default function App() {
     senderPhone: '',
     notes: ''
   });
+
+  // NUEVOS ESTADOS: Categorías, Ruta Search, Cuentas de Pago
+  const [categories, setCategories] = useState(() => loadFromStorage('epds_categories_v2', DEFAULT_CATEGORIES));
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ id: '', label: '' });
+  
+  const [zoneSearchInput, setZoneSearchInput] = useState('');
+  const [showZoneSuggestions, setShowZoneSuggestions] = useState(false);
+
+  const [paymentReceivers, setPaymentReceivers] = useState(() => loadFromStorage('epds_payment_receivers_v2', DEFAULT_PAYMENT_RECEIVERS));
+  const [showPaymentReceiverModal, setShowPaymentReceiverModal] = useState(false);
+  const [editingPaymentReceiver, setEditingPaymentReceiver] = useState(null);
+  const [paymentReceiverForm, setPaymentReceiverForm] = useState({
+    type: 'pago_movil',
+    holder: '',
+    bank: '',
+    phone: '',
+    document: '',
+    account: '',
+    binanceId: '',
+    email: '',
+    showToCustomers: true
+  });
+  const [showPaymentShareModal, setShowPaymentShareModal] = useState(false);
+  const [paymentShareSelections, setPaymentShareSelections] = useState({});
 
   const [products, setProducts] = useState(() => {
     const saved = loadFromStorage('epds_products_v2', INITIAL_PRODUCTS);
@@ -772,6 +814,8 @@ export default function App() {
           if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
           if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
           if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
+          if (Array.isArray(data.categories)) setCategories(data.categories);
+          if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers);
           setCloudReady(true);
         } else {
           setDoc(
@@ -788,6 +832,8 @@ export default function App() {
               supplierCatalog,
               securityDeletePin,
               businessWhatsApp,
+              categories,
+              paymentReceivers,
               updatedAt: new Date().toISOString()
             },
             { merge: true }
@@ -873,6 +919,18 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('epds_custom_public_url_v2', JSON.stringify(customPublicUrl)); } catch (e) {}
   }, [customPublicUrl]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_categories_v2', JSON.stringify(categories)); } catch (e) {}
+    if (cloudReady) persistToCloud({ categories });
+  }, [categories, cloudReady]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_payment_receivers_v2', JSON.stringify(paymentReceivers)); } catch (e) {}
+    if (cloudReady) persistToCloud({ paymentReceivers });
+  }, [paymentReceivers, cloudReady]);
+  useEffect(() => {
+    const z = deliveryZones.find(z => z.id === selectedZoneId);
+    if (z) setZoneSearchInput(z.name);
+  }, [selectedZoneId, deliveryZones]);
 
   // ==========================================
   // ESTADOS DEL PUNTO DE VENTA (POS) Y FACTURACIÓN
@@ -885,6 +943,7 @@ export default function App() {
   const [selectedZoneId, setSelectedZoneId] = useState('zone_2');
   const [paymentCondition, setPaymentCondition] = useState('contado');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Pago Móvil');
+  const [selectedReceiverId, setSelectedReceiverId] = useState('');
 
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentSenderName, setPaymentSenderName] = useState(INITIAL_CUSTOMERS[0].name);
@@ -896,6 +955,7 @@ export default function App() {
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
+  const [pendingInvoiceReview, setPendingInvoiceReview] = useState(null);
 
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
@@ -1415,7 +1475,7 @@ export default function App() {
       { type: 'divider' }
     ];
 
-    CATEGORIES.filter(c => c.id !== 'todos').forEach(cat => {
+    categories.filter(c => c.id !== 'todos').forEach(cat => {
       const catProds = availableCustomerProducts.filter(p => p.category === cat.id);
       if (catProds.length > 0) {
         lines.push({ type: 'header', text: cat.label.toUpperCase() });
@@ -1632,9 +1692,6 @@ export default function App() {
   const cartTotalUSD = cartSubtotal + Number(selectedZone.fee || 0);
   const cartTotalBs = cartTotalUSD * Number(exchangeRate || 1);
 
-  // ==========================================
-  // NUEVO: HELPERS DE CORRELATIVO, DÍAS PENDIENTES Y COBRO DE CRÉDITO
-  // ==========================================
   const getNextInvoiceNumber = (paymentCondition) => {
     if (paymentCondition === 'credito') {
       const creditNums = sales
@@ -1722,26 +1779,7 @@ export default function App() {
     setCreditPaymentModal(prev => ({ ...prev, isOpen: false, saleId: null }));
   };
 
-  const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
-    const paidAt = new Date().toISOString();
-    setSales(prev =>
-      prev.map(s =>
-        s.id === saleId
-          ? {
-              ...s,
-              creditPaid: true,
-              creditPaidDate: paidAt,
-              paymentMethod: `${method} (Crédito Liquidado)`,
-              paymentDetails: { ...s.paymentDetails, reference: ref, paidAt }
-            }
-          : s
-      )
-    );
-    showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
-  };
-
-  // Emitir Factura
-  const handleCheckout = () => {
+  const handlePrepareCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1770,6 +1808,11 @@ export default function App() {
       .filter(Boolean)
       .join(' | ');
 
+    const selectedReceiver = paymentReceivers.find(r => r.id === selectedReceiverId) || null;
+    const receiverSummary = selectedReceiver
+      ? `${selectedReceiver.holder} | ${selectedReceiver.bank || ''} ${selectedReceiver.phone || selectedReceiver.binanceId || selectedReceiver.email || ''}`.trim()
+      : null;
+
     const newInvoice = {
       id: `sale_${Date.now()}`,
       invoiceNumber: getNextInvoiceNumber(paymentCondition),
@@ -1792,6 +1835,8 @@ export default function App() {
       paymentCondition,
       creditPaid: paymentCondition === 'contado',
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
+      receiver: selectedReceiver,
+      receiverSummary: receiverSummary,
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
         senderName: paymentSenderName || customerObj.name,
@@ -1804,9 +1849,15 @@ export default function App() {
       notes: orderNotes
     };
 
+    setPendingInvoiceReview(newInvoice);
+  };
+
+  const handleApproveInvoice = () => {
+    if (!pendingInvoiceReview) return;
+
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = cart.find(i => i.productId === prod.id);
+        const soldItem = pendingInvoiceReview.items.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
@@ -1814,18 +1865,194 @@ export default function App() {
 
     setCustomers(prev =>
       prev.map(c =>
-        c.id === selectedCustomerId
-          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
+        c.id === pendingInvoiceReview.customerId
+          ? { ...c, address: pendingInvoiceReview.deliveryAddress, defaultZoneId: selectedZoneId }
           : c
       )
     );
 
-    setSales(prev => [newInvoice, ...prev]);
-    setLastInvoiceModal(newInvoice);
+    setSales(prev => [pendingInvoiceReview, ...prev]);
+    setLastInvoiceModal(pendingInvoiceReview);
+    setPendingInvoiceReview(null);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
+    showNotification(`Factura ${pendingInvoiceReview.invoiceNumber} registrada con éxito.`);
+  };
+
+  const handleImportBackupJSON = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (Array.isArray(data.products)) setProducts(data.products);
+        if (Array.isArray(data.users)) setUsers(data.users);
+        if (Array.isArray(data.customers)) setCustomers(data.customers);
+        if (Array.isArray(data.sales)) setSales(data.sales);
+        if (Array.isArray(data.expenses)) setExpenses(data.expenses);
+        if (Array.isArray(data.deliveryZones)) setDeliveryZones(data.deliveryZones);
+        if (Array.isArray(data.paymentMethods)) setPaymentMethods(data.paymentMethods);
+        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(data.supplyCatalog);
+        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(data.supplierCatalog);
+        if (Array.isArray(data.categories)) setCategories(data.categories);
+        if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers);
+        if (typeof data.exchangeRate === 'number') setExchangeRate(data.exchangeRate);
+        showNotification('¡Respaldo restaurado correctamente!');
+      } catch (err) {
+        showNotification('Archivo inválido. Debe ser un respaldo .JSON válido.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleExportTableCSV = (filename, headers, rows) => {
+    const BOM = '\uFEFF';
+    const csvLines = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';'))
+    ];
+    const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification(`Archivo ${filename} descargado.`);
+  };
+
+  const handleSharePaymentData = () => {
+    const selected = paymentReceivers.filter(r => r.isActive !== false && paymentShareSelections[r.id]);
+    if (selected.length === 0) {
+      showNotification('Selecciona al menos una cuenta de pago para compartir.', 'error');
+      return;
+    }
+
+    const typeLabels = {
+      pago_movil: '📱 Pago Móvil',
+      transferencia: '🏦 Transferencia Bancaria',
+      binance: '🟡 Binance (USDT)',
+      zelle: '💜 Zelle',
+      efectivo: '💵 Efectivo'
+    };
+
+    const lines = [
+      `💳 *DATOS PARA REALIZAR TU PAGO*`,
+      `*EL PUNTO DEL SABOR* 🌭`,
+      '',
+      `A continuación nuestros datos para que puedas realizar tu pago:`,
+      ''
+    ];
+
+    selected.forEach((r, idx) => {
+      lines.push(`*${idx + 1}. ${typeLabels[r.type] || r.type}*`);
+      if (r.holder) lines.push(`• Titular: ${r.holder}`);
+      if (r.document) lines.push(`• C.I / RIF: ${r.document}`);
+      if (r.bank) lines.push(`• Banco: ${r.bank}`);
+      if (r.phone) lines.push(`• Teléfono: ${r.phone}`);
+      if (r.account) lines.push(`• Cuenta: ${r.account}`);
+      if (r.binanceId) lines.push(`• Binance Pay ID: ${r.binanceId}`);
+      if (r.email) lines.push(`• Email: ${r.email}`);
+      lines.push('');
+    });
+
+    lines.push(`💰 *Tasa BCV del día:* Bs. ${Number(exchangeRate).toFixed(2)}/$`);
+    lines.push(`📞 *WhatsApp Ventas:* ${businessWhatsApp}`);
+    lines.push('');
+    lines.push(`⚠️ *IMPORTANTE:* Después de pagar, envía el comprobante y el número de referencia por WhatsApp para confirmar tu pedido.`);
+
+    const message = lines.join('\n');
+    copyTextToClipboard(message);
+
+    const rawBizPhone = businessWhatsApp.replace(/[^0-9]/g, '');
+    const intlPhone = rawBizPhone.startsWith('0') ? `58${rawBizPhone.slice(1)}` : rawBizPhone;
+    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleSaveCategory = (e) => {
+    e.preventDefault();
+    if (!categoryForm.label.trim() || !categoryForm.id.trim()) {
+      showNotification('Completa el ID y el nombre de la categoría.', 'error');
+      return;
+    }
+    const cleanId = categoryForm.id.trim().toLowerCase().replace(/\s+/g, '_');
+    if (editingCategory) {
+      setCategories(prev =>
+        prev.map(c => (c.id === editingCategory.id ? { ...c, label: categoryForm.label.trim() } : c))
+      );
+      showNotification('Categoría actualizada.');
+    } else {
+      if (categories.some(c => c.id === cleanId)) {
+        showNotification('Ya existe una categoría con ese ID.', 'error');
+        return;
+      }
+      setCategories(prev => [...prev, { id: cleanId, label: categoryForm.label.trim() }]);
+      showNotification('Categoría agregada.');
+    }
+    setShowCategoryModal(false);
+    setEditingCategory(null);
+    setCategoryForm({ id: '', label: '' });
+  };
+
+  const handleDeleteCategory = (cat) => {
+    if (cat.isFixed) return;
+    requestAuthorizedDelete(
+      `Eliminar Categoría: ${cat.label}`,
+      `¿Eliminar la categoría "${cat.label}"? Los productos con esta categoría no se borrarán, pero dejarán de aparecer filtrados.`,
+      () => {
+        setCategories(prev => prev.filter(c => c.id !== cat.id));
+        showNotification('Categoría eliminada.');
+      }
+    );
+  };
+
+  const handleSavePaymentReceiver = (e) => {
+    e.preventDefault();
+    if (!paymentReceiverForm.holder.trim()) {
+      showNotification('Indica el titular de la cuenta.', 'error');
+      return;
+    }
+    const data = { ...paymentReceiverForm };
+    if (editingPaymentReceiver) {
+      setPaymentReceivers(prev =>
+        prev.map(r => (r.id === editingPaymentReceiver.id ? { ...r, ...data } : r))
+      );
+      showNotification('Cuenta de pago actualizada.');
+    } else {
+      setPaymentReceivers(prev => [
+        ...prev,
+        { id: `pr_${Date.now()}`, ...data, isActive: true }
+      ]);
+      showNotification('Cuenta de pago agregada.');
+    }
+    setShowPaymentReceiverModal(false);
+    setEditingPaymentReceiver(null);
+    setPaymentReceiverForm({
+      type: 'pago_movil',
+      holder: '',
+      bank: '',
+      phone: '',
+      document: '',
+      account: '',
+      binanceId: '',
+      email: '',
+      showToCustomers: true
+    });
+  };
+
+  const handleDeletePaymentReceiver = (r) => {
+    requestAuthorizedDelete(
+      `Eliminar Cuenta de Pago`,
+      `¿Eliminar la cuenta de ${r.holder} (${r.type})?`,
+      () => {
+        setPaymentReceivers(prev => prev.filter(item => item.id !== r.id));
+        showNotification('Cuenta de pago eliminada.');
+      }
+    );
   };
 
   const handleSaveCustomer = (e) => {
@@ -2169,7 +2396,9 @@ export default function App() {
       expenses,
       sales,
       supplyCatalog,
-      supplierCatalog
+      supplierCatalog,
+      categories,
+      paymentReceivers
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -2461,7 +2690,7 @@ export default function App() {
                 />
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                {CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
@@ -2762,6 +2991,31 @@ export default function App() {
                 </div>
               </div>
 
+              {paymentReceivers.filter(r => r.isActive !== false && r.showToCustomers).length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-700/50 space-y-2">
+                  <div className="text-[11px] font-black text-emerald-400 uppercase">
+                    💳 Cuentas para enviar tu pago:
+                  </div>
+                  {paymentReceivers
+                    .filter(r => r.isActive !== false && r.showToCustomers)
+                    .map(r => (
+                      <div key={r.id} className="p-2 rounded-xl bg-stone-950/60 text-xs text-stone-200 border border-stone-800">
+                        <div className="font-bold text-emerald-300">
+                          {(r.type || '').replace('_', ' ').toUpperCase()} — {r.holder}
+                        </div>
+                        <div className="text-[10px] text-stone-400 mt-0.5">
+                          {r.document && <>{r.document} • </>}
+                          {r.bank && <>{r.bank} • </>}
+                          {r.phone && <>{r.phone} • </>}
+                          {r.account && <>Cta: {r.account} • </>}
+                          {r.binanceId && <>Binance: {r.binanceId} • </>}
+                          {r.email && <>{r.email}</>}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
               <button
                 type="button"
                 disabled={customerCart.length === 0}
@@ -2871,6 +3125,10 @@ export default function App() {
     });
   });
 
+  const filteredZoneSuggestions = deliveryZones.filter(z =>
+    z.name.toLowerCase().includes(zoneSearchInput.trim().toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col [&_*]:scrollbar-thin [&_*]:scrollbar-thumb-stone-300 [&_*]:scrollbar-track-transparent">
       {notification && (
@@ -2949,6 +3207,14 @@ export default function App() {
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Menú Clientes (Descargar / Enlace)</span>
+            </button>
+
+            <button
+              onClick={() => setShowPaymentShareModal(true)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 shadow transition"
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Compartir Cuentas Pago</span>
             </button>
 
             <button
@@ -3033,7 +3299,7 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => setPosCategory(cat.id)}
@@ -3178,21 +3444,47 @@ export default function App() {
                     />
                   </div>
 
-                  <div>
+                  <div className="relative">
                     <label className="block text-[11px] font-bold text-stone-700 mb-1">
                       🛵 Ruta de Domicilio / Tarifa de Envío:
                     </label>
-                    <select
-                      value={selectedZoneId}
-                      onChange={e => setSelectedZoneId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900"
-                    >
-                      {deliveryZones.map(z => (
-                        <option key={z.id} value={z.id}>
-                          {z.name} — ${Number(z.fee).toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={zoneSearchInput}
+                      onChange={e => {
+                        setZoneSearchInput(e.target.value);
+                        setShowZoneSuggestions(true);
+                      }}
+                      onFocus={() => setShowZoneSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowZoneSuggestions(false), 200)}
+                      placeholder="Escribe para filtrar la ruta..."
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    {showZoneSuggestions && (
+                      <div className="absolute z-30 mt-1 w-full bg-white rounded-xl shadow-xl border border-amber-400 max-h-52 overflow-y-auto divide-y divide-stone-100">
+                        {filteredZoneSuggestions.length === 0 ? (
+                          <div className="p-3 text-xs text-stone-500">
+                            Sin coincidencias.
+                          </div>
+                        ) : (
+                          filteredZoneSuggestions.map(z => (
+                            <button
+                              key={z.id}
+                              type="button"
+                              onMouseDown={() => {
+                                setSelectedZoneId(z.id);
+                                setZoneSearchInput(z.name);
+                                setShowZoneSuggestions(false);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-amber-50 text-xs font-bold text-stone-800 flex justify-between"
+                            >
+                              <span>{z.name}</span>
+                              <span className="text-amber-700">${Number(z.fee).toFixed(2)}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3300,6 +3592,26 @@ export default function App() {
                             className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
                           />
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                          💼 Cuenta que RECIBE el pago:
+                        </label>
+                        <select
+                          value={selectedReceiverId}
+                          onChange={e => setSelectedReceiverId(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                        >
+                          <option value="">-- Sin especificar --</option>
+                          {paymentReceivers
+                            .filter(r => r.isActive !== false)
+                            .map(r => (
+                              <option key={r.id} value={r.id}>
+                                {r.holder} • {r.type.replace('_', ' ')} • {r.bank || r.binanceId || r.email || ''}
+                              </option>
+                            ))}
+                        </select>
                       </div>
 
                       <div className="pt-1 border-t border-stone-200">
@@ -3464,10 +3776,10 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={handleCheckout}
+                  onClick={handlePrepareCheckout}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-stone-950 font-black text-sm shadow-lg transition flex items-center justify-center gap-2"
                 >
-                  <Printer className="w-4 h-4" /> Emitir Factura y Registrar Venta
+                  <Printer className="w-4 h-4" /> Revisar y Emitir Factura
                 </button>
               </div>
             </div>
@@ -3507,7 +3819,7 @@ export default function App() {
                       onChange={e => setProductForm({ ...productForm, category: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
                     >
-                      {CATEGORIES.filter(c => c.id !== 'todos').map(c => (
+                      {categories.filter(c => c.id !== 'todos').map(c => (
                         <option key={c.id} value={c.id}>
                           {c.label}
                         </option>
@@ -5080,6 +5392,190 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* NUEVA SECCIÓN: CATEGORÍAS DEL MENÚ */}
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-amber-600" /> Categorías del Menú
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCategory(null);
+                    setCategoryForm({ id: '', label: '' });
+                    setShowCategoryModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-stone-900 text-amber-400 text-xs font-extrabold"
+                >
+                  + Nueva Categoría
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                {categories.map(cat => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs"
+                  >
+                    <div>
+                      <strong className="text-stone-900">{cat.label}</strong>
+                      <span className="text-stone-500 ml-2 font-mono text-[10px]">({cat.id})</span>
+                      {cat.isFixed && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold">
+                          Fija
+                        </span>
+                      )}
+                    </div>
+                    {!cat.isFixed && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setCategoryForm({ id: cat.id, label: cat.label });
+                            setShowCategoryModal(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* NUEVA SECCIÓN: RESPALDOS Y EXPORTACIÓN EXCEL */}
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4 md:col-span-2">
+              <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                <Download className="w-5 h-5 text-amber-600" /> Respaldos y Exportación
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                  <h3 className="font-black text-xs text-amber-900 uppercase">📤 Exportar todo</h3>
+                  <p className="text-[11px] text-stone-600">Descarga la base completa en JSON para respaldar.</p>
+                  <button
+                    type="button"
+                    onClick={handleExportFullBackupJSON}
+                    className="w-full py-2.5 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> Descargar Respaldo (.JSON)
+                  </button>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                  <h3 className="font-black text-xs text-emerald-900 uppercase">📥 Importar respaldo</h3>
+                  <p className="text-[11px] text-stone-600">Restaura tu base desde un archivo .JSON previamente descargado.</p>
+                  <label className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer">
+                    <Upload className="w-4 h-4" /> Subir Respaldo (.JSON)
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleImportBackupJSON}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <h3 className="font-black text-xs text-stone-900 uppercase">📊 Descargar cada tabla en Excel (CSV)</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Productos_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Categoria', 'Etapa', 'PVP USD', 'Costo USD', 'Stock', 'MinStock', 'Descripcion'],
+                        products.map(p => [p.id, p.name, p.category, p.stage, p.price, p.cost, p.stock, p.minStock, p.description])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Utensils className="w-3.5 h-3.5" /> Productos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Ventas_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['Factura', 'Fecha', 'Cliente', 'Cedula', 'Telefono', 'Direccion', 'Ruta', 'Condicion', 'Metodo', 'Referencia', 'Estado', 'Subtotal', 'Envio', 'Total USD', 'Total Bs'],
+                        sales.map(s => [
+                          s.invoiceNumber, s.date, s.customerName, s.customerDocument, s.customerPhone,
+                          s.deliveryAddress, s.deliveryZoneName, s.paymentCondition, s.paymentMethod,
+                          s.paymentDetails?.reference || '', s.creditPaid ? 'Pagada' : 'Pendiente',
+                          s.subtotal, s.deliveryFee, s.total, s.totalBs
+                        ])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Ventas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Clientes_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Cedula', 'Telefono', 'Direccion', 'RutaDefault'],
+                        customers.map(c => [c.id, c.name, c.document, c.phone, c.address, c.defaultZoneId])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Users className="w-3.5 h-3.5" /> Clientes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Gastos_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['Fecha', 'Tipo', 'Categoria', 'Descripcion', 'Monto USD', 'Proveedor', 'Rendimiento', 'Consumido %'],
+                        expenses.map(e => [e.date, e.type, e.category, e.description, e.amount, e.supplier, e.expectedYieldUnits, e.consumedPercent])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Package className="w-3.5 h-3.5" /> Gastos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Rutas_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Tarifa USD'],
+                        deliveryZones.map(z => [z.id, z.name, z.fee])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Truck className="w-3.5 h-3.5" /> Rutas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Categorias_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Fija'],
+                        categories.map(c => [c.id, c.label, c.isFixed ? 'SI' : 'NO'])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Categorías
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -5446,6 +5942,228 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: REVISAR FACTURA ANTES DE EMITIR */}
+      {pendingInvoiceReview && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[92vh] overflow-y-auto">
+            <div className="text-center border-b border-dashed border-stone-300 pb-3">
+              <div className="text-2xl">🧾</div>
+              <h3 className="text-lg font-black text-stone-900">REVISAR FACTURA ANTES DE EMITIR</h3>
+              <p className="text-xs font-bold text-amber-700">
+                {pendingInvoiceReview.invoiceNumber} — {pendingInvoiceReview.paymentCondition === 'credito' ? 'CRÉDITO' : 'CONTADO'}
+              </p>
+              <p className="text-[11px] text-stone-500">
+                Verifica todos los datos y aprueba o regresa para modificar
+              </p>
+            </div>
+
+            <div className="text-xs space-y-1 bg-stone-50 p-3 rounded-2xl border border-stone-200">
+              <div><strong>Cliente:</strong> {pendingInvoiceReview.customerName} ({pendingInvoiceReview.customerPhone})</div>
+              <div><strong>📍 Dirección:</strong> {pendingInvoiceReview.deliveryAddress}</div>
+              <div><strong>🛵 Ruta:</strong> {pendingInvoiceReview.deliveryZoneName} (${Number(pendingInvoiceReview.deliveryFee).toFixed(2)})</div>
+              <div><strong>💳 Pago:</strong> {pendingInvoiceReview.paymentMethod} ({pendingInvoiceReview.paymentCondition.toUpperCase()})</div>
+              <div><strong>🔢 Ref:</strong> {pendingInvoiceReview.paymentDetails?.reference}</div>
+              {pendingInvoiceReview.receiverSummary && (
+                <div className="text-emerald-800 font-bold">
+                  <strong>💼 Recibe el pago:</strong> {pendingInvoiceReview.receiverSummary}
+                </div>
+              )}
+              {pendingInvoiceReview.notes && (
+                <div><strong>📝 Nota:</strong> {pendingInvoiceReview.notes}</div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
+              {pendingInvoiceReview.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span>{item.qty}x {item.name}</span>
+                  <span className="font-bold">${item.subtotal.toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-stone-500 pt-1">
+                <span>Servicio Delivery:</span>
+                <span>${Number(pendingInvoiceReview.deliveryFee).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base font-black text-stone-900 pt-2 border-t border-stone-300">
+                <span>TOTAL:</span>
+                <span>
+                  ${pendingInvoiceReview.total.toFixed(2)} <span className="text-xs">(Bs. {Number(pendingInvoiceReview.totalBs).toFixed(2)})</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleApproveInvoice}
+                className="py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Factura
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingInvoiceReview(null)}
+                className="py-3 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-black text-sm flex items-center justify-center gap-2"
+              >
+                ← Volver y Modificar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CATEGORÍA */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
+            <h3 className="text-base font-black text-stone-900">
+              {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+            </h3>
+            <form onSubmit={handleSaveCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">ID interno (sin espacios) *</label>
+                <input
+                  type="text"
+                  value={categoryForm.id}
+                  onChange={e => setCategoryForm({ ...categoryForm, id: e.target.value })}
+                  placeholder="Ej: sushi, tacos, alitas"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                  disabled={!!editingCategory}
+                  required
+                />
+                <p className="text-[10px] text-stone-500 mt-1">Solo letras minúsculas, números y guiones bajos.</p>
+              </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Nombre visible (con emoji si quieres) *</label>
+                <input
+                  type="text"
+                  value={categoryForm.label}
+                  onChange={e => setCategoryForm({ ...categoryForm, label: e.target.value })}
+                  placeholder="Ej: 🍣 Sushi y Rolls"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                  required
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-black text-xs">
+                  {editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCategoryModal(false);
+                    setEditingCategory(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: COMPARTIR CUENTAS DE PAGO */}
+      {showPaymentShareModal && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-emerald-500 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-stone-900">Compartir Cuentas de Pago</h3>
+                  <p className="text-xs text-stone-500">
+                    Selecciona las cuentas que quieres enviar al cliente por WhatsApp.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaymentShareModal(false)}
+                className="text-stone-400 hover:text-stone-700 font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {paymentReceivers.filter(r => r.isActive !== false).map(r => (
+                <label
+                  key={r.id}
+                  className={`flex items-start gap-2 p-3 rounded-2xl border cursor-pointer transition ${
+                    paymentShareSelections[r.id]
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : 'bg-stone-50 border-stone-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!paymentShareSelections[r.id]}
+                    onChange={e =>
+                      setPaymentShareSelections(prev => ({ ...prev, [r.id]: e.target.checked }))
+                    }
+                    className="w-4 h-4 accent-emerald-600 mt-0.5"
+                  />
+                  <div className="flex-1">
+                    <div className="font-black text-xs text-stone-900">
+                      {r.holder} — <span className="text-emerald-700 uppercase">{(r.type || '').replace('_', ' ')}</span>
+                    </div>
+                    <div className="text-[11px] text-stone-600 mt-0.5">
+                      {r.document && <>C.I: {r.document} • </>}
+                      {r.bank && <>{r.bank} • </>}
+                      {r.phone && <>Tel: {r.phone} • </>}
+                      {r.account && <>Cta: {r.account} • </>}
+                      {r.binanceId && <>Binance: {r.binanceId} • </>}
+                      {r.email && <>Email: {r.email}</>}
+                    </div>
+                  </div>
+                </label>
+              ))}
+              {paymentReceivers.filter(r => r.isActive !== false).length === 0 && (
+                <div className="p-4 text-center text-xs text-stone-500 bg-stone-50 rounded-xl">
+                  No hay cuentas de pago. Agrégalas en la pestaña <em>Usuarios y Tipos de Pago</em>.
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const all = {};
+                  paymentReceivers.filter(r => r.isActive !== false).forEach(r => { all[r.id] = true; });
+                  setPaymentShareSelections(all);
+                }}
+                className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold"
+              >
+                Seleccionar Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentShareSelections({})}
+                className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSharePaymentData();
+                setShowPaymentShareModal(false);
+              }}
+              className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+            >
+              <Smartphone className="w-4 h-4" /> Copiar y Enviar por WhatsApp
+            </button>
           </div>
         </div>
       )}
