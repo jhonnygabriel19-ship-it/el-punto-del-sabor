@@ -3936,10 +3936,6 @@ export default function App() {
                       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
                       .map(s => (
                         <div
-                          key={s.id}
-                          className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300 flex flex-wrap items-center justify-between gap-3 text-xs"
-                        >
-                          <div>
                             <div className="font-black text-stone-900">
                               {s.invoiceNumber} — {s.customerName} ({s.customerPhone})
                             </div>
@@ -3956,7 +3952,7 @@ export default function App() {
                           >
                             Registrar Cobro
                           </button>
-                        </div>
+                        </div>                          
                       ))
                   )}
                 </div>
