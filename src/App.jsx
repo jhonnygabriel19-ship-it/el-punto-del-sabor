@@ -4484,6 +4484,20 @@ export default function App() {
                 <h2 className="text-lg font-black text-stone-900">
                   Cierre de Ventas Diario — "El Punto del Sabor"
                 </h2>
+              <div>
+                <h2 className="text-lg font-black text-stone-900">
+                  Cierre de Ventas Diario — "El Punto del Sabor"
+                </h2>
+                <p className="text-xs text-stone-500">
+                  Detalle de todos los productos vendidos, montos percibidos y referencias de Pago Móvil.
+                </p>
+                {/* BOTONES DE FILTRO AGREGADOS */}
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => setClosingFilter('todas')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'todas' ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-600'}`}>Todas</button>
+                  <button onClick={() => setClosingFilter('contado')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'contado' ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-600'}`}>Contado</button>
+                  <button onClick={() => setClosingFilter('credito')} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${closingFilter === 'credito' ? 'bg-amber-600 text-white' : 'bg-stone-200 text-stone-600'}`}>Crédito</button>
+                </div>
+              </div>                
                 <p className="text-xs text-stone-500">
                   Detalle de todos los productos vendidos, montos percibidos y referencias de Pago Móvil.
                 </p>
