@@ -909,6 +909,18 @@ export default function App() {
     }
   };
 
+  };
+  // ==========================================
+  // Nuevos estados para Créditos y Filtros
+  // ==========================================
+  const [closingFilter, setClosingFilter] = useState('todas');
+  const [payCreditModal, setPayCreditModal] = useState(null);
+  const [payCreditForm, setPayCreditForm] = useState({
+    method: 'Pago Móvil',
+    reference: '',
+    bank: ''
+  });
+  
   // ==========================================
   // SINCRONIZACIÓN AUTOMÁTICA DEL DÓLAR BCV EN TIEMPO REAL
   // ==========================================
