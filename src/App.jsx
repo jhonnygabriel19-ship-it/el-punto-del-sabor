@@ -5425,6 +5425,85 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ========================================== */}
+      {/* MODAL PARA LIQUIDAR FACTURA A CRÉDITO */}
+      {/* ========================================== */}
+      {payCreditModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-black text-stone-900">
+              Liquidar Factura a Crédito: {payCreditModal.invoiceNumber}
+            </h3>
+            <div className="text-xs text-stone-600 bg-stone-50 p-3 rounded-xl border border-stone-200">
+              <strong>Cliente:</strong> {payCreditModal.customerName} <br/>
+              <strong>Monto a pagar:</strong> ${payCreditModal.total.toFixed(2)}
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setSales(prev => prev.map(s => s.id === payCreditModal.id ? {
+                ...s,
+                creditPaid: true,
+                paymentMethod: payCreditForm.method,
+                paymentDetails: {
+                  ...s.paymentDetails,
+                  reference: payCreditForm.reference || 'Sin referencia',
+                  senderBank: payCreditForm.bank || 'N/A'
+                }
+              } : s));
+              showNotification(`Factura ${payCreditModal.invoiceNumber} liquidada con éxito.`);
+              setPayCreditModal(null);
+            }} className="space-y-3">
+              
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Método de Pago Recibido:</label>
+                <select
+                  value={payCreditForm.method}
+                  onChange={e => setPayCreditForm({ ...payCreditForm, method: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold"
+                >
+                  {paymentMethods.map(pm => (
+                    <option key={pm.id} value={pm.name}>{pm.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Referencia / Comprobante:</label>
+                <input
+                  type="text"
+                  required
+                  value={payCreditForm.reference}
+                  onChange={e => setPayCreditForm({ ...payCreditForm, reference: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                  placeholder="Ej: 849201"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Banco / Origen (Opcional):</label>
+                <input
+                  type="text"
+                  value={payCreditForm.bank}
+                  onChange={e => setPayCreditForm({ ...payCreditForm, bank: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                  placeholder="Banco desde donde pagó"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs">
+                  Confirmar Pago
+                </button>
+                <button type="button" onClick={() => setPayCreditModal(null)} className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+}             
