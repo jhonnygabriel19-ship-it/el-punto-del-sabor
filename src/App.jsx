@@ -3966,12 +3966,7 @@ export default function App() {
                               Asignar Pago
                             </button>
                           </div>
-                        )}
-                      ))
-                  )}
-                </div>
-              </div>
-            </div>                        
+                        )}                                  
 
             {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
