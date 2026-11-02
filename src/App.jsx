@@ -3963,10 +3963,15 @@ export default function App() {
                               }}
                               className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow"
                             >
-                              Asignar Pago
+                              Asignar 
                             </button>
                           </div>
-                        )}                                  
+                        )}
+                      ))
+                  )}
+                </div>
+              </div>
+            </div>                                  
 
             {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
