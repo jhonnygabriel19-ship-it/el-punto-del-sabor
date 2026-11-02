@@ -39,7 +39,8 @@ import {
   ExternalLink,
   Smartphone,
   FileDown,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Landmark
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
@@ -171,6 +172,25 @@ const INITIAL_USERS = [
     password: '19749698',
     role: 'Socio Administrador'
   }
+];
+
+// Categorías Dinámicas Iniciales
+const INITIAL_CATEGORIES = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'perros', label: '🌭 Perros Calientes' },
+  { id: 'combos', label: '🥤 Combos con Refresco' },
+  { id: 'hamburguesas', label: '🍔 Hamburguesas' },
+  { id: 'papas', label: '🍟 Papas Fritas' },
+  { id: 'especialidades', label: '🧀 Tequeños y Tenders' },
+  { id: 'postres', label: '🍨 Postres y Helados' },
+  { id: 'refrescos', label: '🧊 Bebidas y Refrescos' }
+];
+
+// Cuentas Receptoras Propias Iniciales
+const INITIAL_RECEIVING_ACCOUNTS = [
+  { id: 'acc_1', name: 'BDV - Michelle Sifontes' },
+  { id: 'acc_2', name: 'Binance USDT - Empresa' },
+  { id: 'acc_3', name: 'Caja Fuerte (Efectivo)' }
 ];
 
 const INITIAL_PRODUCTS = [
@@ -374,12 +394,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true },
-  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false },
-  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true }
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0424-9043122 / V-21237816 / BDV' },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@elpuntodelsabor.com' },
+  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: 'Pago exacto al entregar' },
+  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: 'Pago exacto al entregar' },
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: 'Solicitar cuenta por WhatsApp' },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'pagoszelle@email.com' }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -578,17 +598,6 @@ const INITIAL_SALES = [
   }
 ];
 
-const CATEGORIES = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'perros', label: '🌭 Perros Calientes' },
-  { id: 'combos', label: '🥤 Combos con Refresco' },
-  { id: 'hamburguesas', label: '🍔 Hamburguesas' },
-  { id: 'papas', label: '🍟 Papas Fritas' },
-  { id: 'especialidades', label: '🧀 Tequeños y Tenders' },
-  { id: 'postres', label: '🍨 Postres y Helados' },
-  { id: 'refrescos', label: '🧊 Bebidas y Refrescos' }
-];
-
 const STAGES_INFO = [
   { stage: 1, title: 'Etapa 1: Perros Calientes + Combos Delivery', status: 'Activa (Inicial)' },
   { stage: 2, title: 'Etapa 2: Hamburguesas y Combos con Refresco', status: 'Lista en Menú' },
@@ -615,6 +624,22 @@ export default function App() {
   const [cloudReady, setCloudReady] = useState(false);
 
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
+  const [categories, setCategories] = useState(() => loadFromStorage('epds_categories_v2', INITIAL_CATEGORIES));
+  const [receivingAccounts, setReceivingAccounts] = useState(() => loadFromStorage('epds_recv_accs_v2', INITIAL_RECEIVING_ACCOUNTS));
+  const [paymentMethods, setPaymentMethods] = useState(() => loadFromStorage('epds_pm_v2', INITIAL_PAYMENT_METHODS));
+  const [deliveryZones, setDeliveryZones] = useState(() => loadFromStorage('epds_zones_v2', INITIAL_DELIVERY_ZONES));
+  const [customers, setCustomers] = useState(() => loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS));
+  const [expenses, setExpenses] = useState(() => loadFromStorage('epds_expenses_v2', INITIAL_EXPENSES));
+  const [sales, setSales] = useState(() => loadFromStorage('epds_sales_v2', INITIAL_SALES));
+
+  // Memoria persistente de Insumos/Productos Comprados y Comercios/Proveedores
+  const [supplyCatalog, setSupplyCatalog] = useState(() =>
+    loadFromStorage('epds_supply_catalog_v2', INITIAL_SUPPLY_CATALOG)
+  );
+  const [supplierCatalog, setSupplierCatalog] = useState(() =>
+    loadFromStorage('epds_supplier_catalog_v2', INITIAL_SUPPLIERS_CATALOG)
+  );
+
   const [currentUser, setCurrentUser] = useState(() => INITIAL_USERS[0]);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
   const [loginPassword, setLoginPassword] = useState('21237816');
@@ -698,19 +723,6 @@ export default function App() {
       return item;
     });
   });
-  const [deliveryZones, setDeliveryZones] = useState(() => loadFromStorage('epds_zones_v2', INITIAL_DELIVERY_ZONES));
-  const [paymentMethods, setPaymentMethods] = useState(() => loadFromStorage('epds_pm_v2', INITIAL_PAYMENT_METHODS));
-  const [customers, setCustomers] = useState(() => loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS));
-  const [expenses, setExpenses] = useState(() => loadFromStorage('epds_expenses_v2', INITIAL_EXPENSES));
-  const [sales, setSales] = useState(() => loadFromStorage('epds_sales_v2', INITIAL_SALES));
-
-  // Memoria persistente de Insumos/Productos Comprados y Comercios/Proveedores
-  const [supplyCatalog, setSupplyCatalog] = useState(() =>
-    loadFromStorage('epds_supply_catalog_v2', INITIAL_SUPPLY_CATALOG)
-  );
-  const [supplierCatalog, setSupplierCatalog] = useState(() =>
-    loadFromStorage('epds_supplier_catalog_v2', INITIAL_SUPPLIERS_CATALOG)
-  );
 
   // Notificaciones flotantes
   const [notification, setNotification] = useState(null);
@@ -758,6 +770,8 @@ export default function App() {
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
+          if (Array.isArray(data.categories) && data.categories.length > 0) setCategories(data.categories);
+          if (Array.isArray(data.receivingAccounts) && data.receivingAccounts.length > 0) setReceivingAccounts(data.receivingAccounts);
           if (Array.isArray(data.products)) setProducts(data.products);
           if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
           if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
@@ -775,6 +789,8 @@ export default function App() {
             stateDocRef,
             {
               users,
+              categories,
+              receivingAccounts,
               products,
               deliveryZones,
               paymentMethods,
@@ -823,6 +839,14 @@ export default function App() {
     try { localStorage.setItem('epds_users_v2', JSON.stringify(users)); } catch (e) {}
     if (cloudReady) persistToCloud({ users });
   }, [users, cloudReady]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_categories_v2', JSON.stringify(categories)); } catch (e) {}
+    if (cloudReady) persistToCloud({ categories });
+  }, [categories, cloudReady]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_recv_accs_v2', JSON.stringify(receivingAccounts)); } catch (e) {}
+    if (cloudReady) persistToCloud({ receivingAccounts });
+  }, [receivingAccounts, cloudReady]);
   useEffect(() => {
     try { localStorage.setItem('epds_rate_v2', JSON.stringify(exchangeRate)); } catch (e) {}
   }, [exchangeRate]);
@@ -880,22 +904,32 @@ export default function App() {
   const [posCategory, setPosCategory] = useState('todos');
   const [cart, setCart] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('cli_1');
-  const [customDeliveryAddress, setCustomDeliveryAddress] = useState(INITIAL_CUSTOMERS[0].address);
+  const [customDeliveryAddress, setCustomDeliveryAddress] = useState(INITIAL_CUSTOMERS[0]?.address || '');
+  
+  // Modificación: Estado para el input type="text" con datalist
+  const [zoneSearchInput, setZoneSearchInput] = useState('');
   const [selectedZoneId, setSelectedZoneId] = useState('zone_2');
+
   const [paymentCondition, setPaymentCondition] = useState('contado'); // 'contado' | 'credito'
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Pago Móvil');
+  
+  // Modificación: Cuenta receptora seleccionada al facturar
+  const [selectedReceivingAccountId, setSelectedReceivingAccountId] = useState('');
 
   // Celdas separadas para los datos del emisor (sin tener que poner "/" manualmente)
   const [paymentReference, setPaymentReference] = useState('');
-  const [paymentSenderName, setPaymentSenderName] = useState(INITIAL_CUSTOMERS[0].name);
-  const [paymentSenderDoc, setPaymentSenderDoc] = useState(INITIAL_CUSTOMERS[0].document);
+  const [paymentSenderName, setPaymentSenderName] = useState(INITIAL_CUSTOMERS[0]?.name || '');
+  const [paymentSenderDoc, setPaymentSenderDoc] = useState(INITIAL_CUSTOMERS[0]?.document || '');
   const [paymentSenderBank, setPaymentSenderBank] = useState('0102 - Banco de Venezuela (BDV)');
   const [isCustomBankEdit, setIsCustomBankEdit] = useState(false);
-  const [paymentSenderPhone, setPaymentSenderPhone] = useState(INITIAL_CUSTOMERS[0].phone);
+  const [paymentSenderPhone, setPaymentSenderPhone] = useState(INITIAL_CUSTOMERS[0]?.phone || '');
 
   const [orderNotes, setOrderNotes] = useState('');
-  const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
+
+  // Modificación: Modal de revisión antes de procesar
+  const [previewInvoice, setPreviewInvoice] = useState(null);
+  const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
 
   // Cambiar método de pago limpia o adapta el campo de Banco / Usuario Binance
   const handleSelectPaymentMethodInPOS = (methodName) => {
@@ -1017,7 +1051,7 @@ export default function App() {
           setEditingProduct(null);
           setProductForm({
             name: '',
-            category: 'perros',
+            category: categories.length > 0 ? categories[0].id : 'perros',
             stage: 1,
             price: '',
             cost: '',
@@ -1045,7 +1079,7 @@ export default function App() {
   const [newZoneForm, setNewZoneForm] = useState({ name: '', fee: '' });
 
   // ==========================================
-  // ESTADOS DE GESTIÓN DE MENÚ E INVENTARIO
+  // ESTADOS DE GESTIÓN DE MENÚ E INVENTARIO Y AJUSTES
   // ==========================================
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
@@ -1059,6 +1093,11 @@ export default function App() {
     description: '',
     image: ''
   });
+
+  // Formularios de Ajustes
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newReceivingAccountName, setNewReceivingAccountName] = useState('');
+  const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({ name: '', details: '' });
 
   // ==========================================
   // ESTADOS DE GASTOS E INVERSIÓN CON AUTOCOMPLETADO Y DESPLEGABLE
@@ -1107,7 +1146,6 @@ export default function App() {
     password: '',
     role: 'Operador de Ventas'
   });
-  const [newPaymentMethodName, setNewPaymentMethodName] = useState('');
 
   // Sincronizar dirección, ruta y celdas separadas del emisor cuando cambia el cliente en el POS
   const handleSelectCustomerInPOS = (custId) => {
@@ -1117,6 +1155,9 @@ export default function App() {
       setCustomDeliveryAddress(found.address);
       if (found.defaultZoneId) {
         setSelectedZoneId(found.defaultZoneId);
+        // Actualizamos el datalist input también
+        const z = deliveryZones.find(dz => dz.id === found.defaultZoneId);
+        if (z) setZoneSearchInput(`${z.name} - $${Number(z.fee).toFixed(2)}`);
       }
       setPaymentSenderName(found.name || '');
       setPaymentSenderDoc(found.document || '');
@@ -1326,9 +1367,10 @@ export default function App() {
       { text: `Dirección de Envío: ${invoice.deliveryAddress}`, bold: true },
       { text: `Ruta Asignada: ${invoice.deliveryZoneName} ($${Number(invoice.deliveryFee).toFixed(2)})` },
       { type: 'divider' },
-      { type: 'header', text: 'DATOS DEL PAGO Y EMISOR' },
+      { type: 'header', text: 'DATOS DEL PAGO Y CUENTA RECEPTORA' },
       { text: `Condición: ${invoice.paymentCondition.toUpperCase()}   |   Método: ${invoice.paymentMethod}`, bold: true },
-      { text: `N° de Referencia: ${invoice.paymentDetails?.reference || 'N/A'}`, bold: true },
+      { text: `Receptor Interno (Caja): ${invoice.receivingAccountName || 'Por Cobrar'}`, bold: true },
+      { text: `N° de Referencia: ${invoice.paymentDetails?.reference || 'N/A'}` },
       { text: `Nombre del Emisor: ${invoice.paymentDetails?.senderName || invoice.paymentDetails?.sender || 'N/A'}` },
       { text: `Cédula / RIF Emisor: ${invoice.paymentDetails?.senderDocument || 'N/A'}` },
       { text: `Banco Emisor: ${invoice.paymentDetails?.senderBank || 'N/A'}   |   Tel: ${invoice.paymentDetails?.senderPhone || 'N/A'}` },
@@ -1388,6 +1430,108 @@ export default function App() {
   };
 
   // ==========================================
+  // EXPORTACIÓN A EXCEL (CSV) Y RESPALDO JSON (IMPORTAR/EXPORTAR)
+  // ==========================================
+  const exportToExcelCSV = (filename, headers, rows) => {
+    const BOM = '\uFEFF';
+    const csvLines = [
+      headers.join(';'),
+      ...rows.map(row =>
+        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
+      )
+    ];
+    const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification(`Reporte Excel (${filename}) descargado.`);
+  };
+
+  const handleExportFullBackupJSON = () => {
+    const backup = {
+      businessName: 'El Punto del Sabor',
+      exportedAt: new Date().toISOString(),
+      exchangeRate,
+      users,
+      categories,
+      receivingAccounts,
+      products,
+      deliveryZones,
+      paymentMethods,
+      customers,
+      expenses,
+      sales,
+      supplyCatalog,
+      supplierCatalog
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification('Respaldo completo de la base de datos (.JSON) descargado.');
+  };
+
+  const handleImportFullBackupJSON = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const backup = JSON.parse(event.target.result);
+        if (backup.users) setUsers(backup.users);
+        if (backup.categories) setCategories(backup.categories);
+        if (backup.receivingAccounts) setReceivingAccounts(backup.receivingAccounts);
+        if (backup.products) setProducts(backup.products);
+        if (backup.deliveryZones) setDeliveryZones(backup.deliveryZones);
+        if (backup.paymentMethods) setPaymentMethods(backup.paymentMethods);
+        if (backup.customers) setCustomers(backup.customers);
+        if (backup.expenses) setExpenses(backup.expenses);
+        if (backup.sales) setSales(backup.sales);
+        if (backup.supplyCatalog) setSupplyCatalog(backup.supplyCatalog);
+        if (backup.supplierCatalog) setSupplierCatalog(backup.supplierCatalog);
+        showNotification('¡Base de datos restaurada correctamente desde JSON!');
+      } catch (error) {
+        showNotification('Error al leer el archivo JSON. Formato inválido.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const copyTextToClipboard = (text) => {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        setCopiedWhatsApp(true);
+        setTimeout(() => setCopiedWhatsApp(false), 3000);
+        showNotification('Texto copiado al portapapeles listo para pegar en WhatsApp.');
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiedWhatsApp(true);
+      setTimeout(() => setCopiedWhatsApp(false), 3000);
+      showNotification('Copiado al portapapeles.');
+    }
+  };
+
+  // ==========================================
   // DESCARGA DEL MENÚ COMERCIAL PARA CLIENTES (PDF Y CARTA IMAGEN HD) + ENLACE DIGITAL
   // ==========================================
   const availableCustomerProducts = useMemo(() => {
@@ -1420,27 +1564,23 @@ export default function App() {
 
   const handleCopyDigitalMenuLink = () => {
     const shareUrl = getPublicMenuShareUrl();
+    
+    // Incluir los detalles de pago configurados
+    const paymentMethodsInfo = paymentMethods.map(pm => {
+      const detail = pm.details ? ` - ${pm.details}` : '';
+      return `• *${pm.name}*${detail}`;
+    }).join('\n');
+
     const message =
       `🌭 *MENÚ DIGITAL DISPONIBLE - EL PUNTO DEL SABOR* 🍔\n` +
       `¡Hola! Te compartimos nuestro menú actualizado con servicio Delivery.\n\n` +
-      `📋 *Nuestros Productos Disponibles hoy:*\n` +
-      availableCustomerProducts
-        .map(
-          p =>
-            `• *${p.name}*: $${Number(p.price).toFixed(2)} (Bs. ${(
-              Number(p.price) * exchangeRate
-            ).toFixed(2)})`
-        )
-        .join('\n') +
-      `\n\n🛵 *Tarifas Delivery:*\n` +
-      deliveryZones.map(z => `• ${z.name}: $${Number(z.fee).toFixed(2)}`).join('\n') +
-      `\n\n💳 *Formas de Pago:* Pago Móvil, Binance (USDT), Efectivo y Transferencia.\n` +
-      `📲 *Para ordenar responde este mensaje con:*\n1) Tu Pedido\n2) Nombre, Cédula y Teléfono\n3) Dirección exacta de envío\n4) Método de Pago y Referencia\n\n` +
-      `🌐 *Enlace Web:* ${shareUrl}\n` +
-      `📞 *WhatsApp Ventas:* ${businessWhatsApp}`;
+      `🌐 *Enlace Web del Menú:* ${shareUrl}\n\n` +
+      `💳 *Cuentas para Pagos:*\n` +
+      paymentMethodsInfo +
+      `\n\n📲 *Pedidos WhatsApp:* ${businessWhatsApp}`;
 
     copyTextToClipboard(message);
-    showNotification('¡Enlace y catálogo completo copiados para compartir en tus redes sociales y WhatsApp!');
+    showNotification('¡Enlace y datos de pago copiados para compartir en tus redes sociales y WhatsApp!');
   };
 
   const handleDownloadCustomerMenuPDF = () => {
@@ -1455,7 +1595,7 @@ export default function App() {
       { type: 'divider' }
     ];
 
-    CATEGORIES.filter(c => c.id !== 'todos').forEach(cat => {
+    categories.filter(c => c.id !== 'todos').forEach(cat => {
       const catProds = availableCustomerProducts.filter(p => p.category === cat.id);
       if (catProds.length > 0) {
         lines.push({ type: 'header', text: cat.label.toUpperCase() });
@@ -1682,21 +1822,24 @@ export default function App() {
   const cartTotalUSD = cartSubtotal + Number(selectedZone.fee || 0);
   const cartTotalBs = cartTotalUSD * Number(exchangeRate || 1);
 
-  // Emitir Factura
-  const handleCheckout = () => {
+  // ==========================================
+  // GENERAR Y CONFIRMAR FACTURA (NUEVO MODAL)
+  // ==========================================
+  const handlePrepareCheckout = () => {
     if (cart.length === 0) {
-      showNotification('Agrega al menos un producto del menú a la factura.', 'error');
+      showNotification('Agrega al menos un producto de la lista.', 'error');
       return;
     }
     if (!customDeliveryAddress.trim()) {
-      showNotification('La dirección de envío es obligatoria para la factura delivery.', 'error');
+      showNotification('La dirección de envío es obligatoria.', 'error');
       return;
     }
     if (paymentCondition === 'contado' && selectedPaymentMethod === 'Pago Móvil' && !paymentReference.trim()) {
-      showNotification('Ingresa el número de referencia del Pago Móvil.', 'error');
+      showNotification('Ingresa la referencia de Pago Móvil.', 'error');
       return;
     }
 
+    const recvAccObj = receivingAccounts.find(a => a.id === selectedReceivingAccountId) || receivingAccounts[0] || { name: 'N/A' };
     const customerObj = customers.find(c => c.id === selectedCustomerId) || {
       id: 'cli_eventual',
       name: 'Cliente Delivery',
@@ -1734,6 +1877,8 @@ export default function App() {
       paymentCondition,
       creditPaid: paymentCondition === 'contado',
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
+      receivingAccountId: paymentCondition === 'contado' ? recvAccObj.id : null,
+      receivingAccountName: paymentCondition === 'contado' ? recvAccObj.name : 'Por Cobrar',
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
         senderName: paymentSenderName || customerObj.name,
@@ -1745,1116 +1890,42 @@ export default function App() {
       },
       notes: orderNotes
     };
+    
+    // Abre el modal de pre-visualización de la venta
+    setPreviewInvoice(newInvoice);
+  };
 
+  const confirmCheckout = () => {
+    if (!previewInvoice) return;
+    
     // Descontar stock del inventario
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = cart.find(i => i.productId === prod.id);
+        const soldItem = previewInvoice.items.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
     );
 
-    // Actualizar dirección del cliente si fue modificada
+    // Actualizar dirección y ruta del cliente si fue modificada
     setCustomers(prev =>
       prev.map(c =>
-        c.id === selectedCustomerId
-          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
+        c.id === previewInvoice.customerId
+          ? { ...c, address: previewInvoice.deliveryAddress, defaultZoneId: selectedZoneId }
           : c
       )
     );
 
-    setSales(prev => [newInvoice, ...prev]);
-    setLastInvoiceModal(newInvoice);
+    setSales(prev => [previewInvoice, ...prev]);
+    setLastInvoiceModal(previewInvoice); // Abre el visualizador oficial de la factura
+    setPreviewInvoice(null);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
+    showNotification(`Factura ${previewInvoice.invoiceNumber} registrada con éxito.`);
   };
 
-  // ==========================================
-  // GESTIÓN DE CLIENTES, RUTAS DE ENVÍO, CRÉDITOS Y PRODUCTOS
-  // ==========================================
-  const handleSaveCustomer = (e) => {
-    e.preventDefault();
-    if (!newCustomerForm.name.trim() || !newCustomerForm.address.trim()) {
-      showNotification('Ingresa al menos el nombre y la dirección de envío del cliente.', 'error');
-      return;
-    }
-    const created = {
-      id: `cli_${Date.now()}`,
-      name: newCustomerForm.name.trim(),
-      document: newCustomerForm.document.trim() || 'V-00000000',
-      phone: newCustomerForm.phone.trim() || 'S/N',
-      address: newCustomerForm.address.trim(),
-      defaultZoneId: newCustomerForm.defaultZoneId || 'zone_1'
-    };
-    setCustomers(prev => [created, ...prev]);
-    setSelectedCustomerId(created.id);
-    setCustomDeliveryAddress(created.address);
-    setSelectedZoneId(created.defaultZoneId);
-    setPaymentSenderName(created.name);
-    setPaymentSenderDoc(created.document);
-    setPaymentSenderPhone(created.phone);
-    setNewCustomerForm({
-      name: '',
-      document: '',
-      phone: '',
-      address: '',
-      defaultZoneId: 'zone_1'
-    });
-    setShowQuickCustomerModal(false);
-    showNotification(`Cliente "${created.name}" registrado y seleccionado.`);
-  };
-
-  const handleAddDeliveryZone = (e) => {
-    e.preventDefault();
-    if (!newZoneForm.name.trim() || newZoneForm.fee === '') {
-      showNotification('Indica el nombre de la ruta y el costo de envío.', 'error');
-      return;
-    }
-    const createdZone = {
-      id: `zone_${Date.now()}`,
-      name: newZoneForm.name.trim(),
-      fee: Number(newZoneForm.fee)
-    };
-    setDeliveryZones(prev => [...prev, createdZone]);
-    setSelectedZoneId(createdZone.id);
-    setNewZoneForm({ name: '', fee: '' });
-    showNotification(`Ruta "${createdZone.name}" ($${createdZone.fee.toFixed(2)}) registrada.`);
-  };
-
-  const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
-    setSales(prev =>
-      prev.map(s =>
-        s.id === saleId
-          ? {
-              ...s,
-              creditPaid: true,
-              paymentMethod: `${method} (Crédito Liquidado)`,
-              paymentDetails: {
-                ...s.paymentDetails,
-                reference: ref
-              }
-            }
-          : s
-      )
-    );
-    showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxW = 500;
-        const scale = Math.min(1, maxW / img.width);
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-          setProductForm(prev => ({ ...prev, image: compressedDataUrl }));
-          showNotification('Fotografía cargada y optimizada correctamente.');
-        }
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSaveProduct = (e) => {
-    e.preventDefault();
-    if (!productForm.name.trim() || !productForm.price) {
-      showNotification('Completa el nombre y el precio del producto.', 'error');
-      return;
-    }
-    const fallbackImg =
-      FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
-
-    if (editingProduct) {
-      setProducts(prev =>
-        prev.map(p =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                name: productForm.name.trim(),
-                category: productForm.category,
-                stage: Number(productForm.stage || 1),
-                price: Number(productForm.price),
-                cost: Number(productForm.cost || 0),
-                stock: Number(productForm.stock || 0),
-                minStock: Number(productForm.minStock || 10),
-                description: productForm.description.trim(),
-                image: productForm.image.trim() || fallbackImg
-              }
-            : p
-        )
-      );
-      showNotification(`Producto "${productForm.name}" actualizado.`);
-    } else {
-      const newProd = {
-        id: `prod_${Date.now()}`,
-        name: productForm.name.trim(),
-        category: productForm.category,
-        stage: Number(productForm.stage || 1),
-        price: Number(productForm.price),
-        cost: Number(productForm.cost || 0),
-        stock: Number(productForm.stock || 0),
-        minStock: Number(productForm.minStock || 10),
-        active: true,
-        description: productForm.description.trim() || 'Especialidad de El Punto del Sabor',
-        image: productForm.image.trim() || fallbackImg
-      };
-      setProducts(prev => [newProd, ...prev]);
-      showNotification(`Producto "${newProd.name}" agregado al menú.`);
-    }
-
-    setEditingProduct(null);
-    setProductForm({
-      name: '',
-      category: 'perros',
-      stage: 1,
-      price: '',
-      cost: '',
-      stock: '',
-      minStock: 10,
-      description: '',
-      image: ''
-    });
-  };
-
-  // ==========================================
-  // REGISTRO DE GASTOS DE INSUMOS E INVERSIÓN CON MEMORIA INTELIGENTE
-  // ==========================================
-  const handleSelectSupplyFromMemory = (item) => {
-    setExpenseForm(prev => ({
-      ...prev,
-      category: item.name,
-      type: item.type || prev.type,
-      expectedYieldUnits: item.expectedYieldUnits ?? prev.expectedYieldUnits,
-      description: prev.description || item.defaultDescription || ''
-    }));
-    setShowSupplySuggestions(false);
-  };
-
-  const handleSelectSupplierFromMemory = (supplierName) => {
-    setExpenseForm(prev => ({
-      ...prev,
-      supplier: supplierName
-    }));
-    setShowSupplierSuggestions(false);
-  };
-
-  const handleAddExpense = (e) => {
-    e.preventDefault();
-    if (!expenseForm.category.trim() || !expenseForm.amount) {
-      showNotification('Completa el producto/insumo y el monto de la compra.', 'error');
-      return;
-    }
-    const cleanCategory = expenseForm.category.trim();
-    const cleanSupplier = expenseForm.supplier.trim() || 'Proveedor General';
-    const cleanDesc = expenseForm.description.trim() || cleanCategory;
-
-    const exp = {
-      id: `exp_${Date.now()}`,
-      date: expenseForm.date,
-      type: expenseForm.type,
-      category: cleanCategory,
-      description: cleanDesc,
-      amount: Number(expenseForm.amount),
-      supplier: cleanSupplier,
-      expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 0),
-      consumedPercent: Number(expenseForm.consumedPercent || 0)
-    };
-
-    // Guardar en la memoria de productos/insumos si es nuevo o actualizarlo
-    setSupplyCatalog(prev => {
-      const exists = prev.some(i => i.name.toLowerCase() === cleanCategory.toLowerCase());
-      if (exists) return prev;
-      return [
-        {
-          name: cleanCategory,
-          type: expenseForm.type,
-          expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 100),
-          defaultDescription: cleanDesc
-        },
-        ...prev
-      ];
-    });
-
-    // Guardar en la memoria de comercios/proveedores si es nuevo
-    setSupplierCatalog(prev => {
-      const exists = prev.some(s => s.toLowerCase() === cleanSupplier.toLowerCase());
-      if (exists) return prev;
-      return [cleanSupplier, ...prev];
-    });
-
-    setExpenses(prev => [exp, ...prev]);
-    setExpenseForm({
-      date: new Date().toISOString().split('T')[0],
-      type: 'insumo',
-      category: '',
-      description: '',
-      amount: '',
-      supplier: '',
-      expectedYieldUnits: 100,
-      consumedPercent: 20
-    });
-    showNotification(`Compra de "${cleanCategory}" en "${cleanSupplier}" guardada en memoria.`);
-  };
-
-  // ==========================================
-  // CÁLCULOS DE KPIS, RENTABILIDAD Y SISTEMA DE ALARMAS
-  // ==========================================
-  const kpiMetrics = useMemo(() => {
-    const totalSalesRevenue = sales.reduce((acc, s) => acc + Number(s.total || 0), 0);
-    const totalFoodRevenue = sales.reduce((acc, s) => acc + Number(s.subtotal || 0), 0);
-    const totalDeliveryRevenue = sales.reduce((acc, s) => acc + Number(s.deliveryFee || 0), 0);
-    const totalRecipeCost = sales.reduce((acc, s) => acc + Number(s.totalCost || 0), 0);
-
-    const cashCollected = sales
-      .filter(s => s.paymentCondition === 'contado' || s.creditPaid)
-      .reduce((acc, s) => acc + Number(s.total || 0), 0);
-
-    const pendingCredit = sales
-      .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
-      .reduce((acc, s) => acc + Number(s.total || 0), 0);
-
-    const totalInsumosExpenses = expenses
-      .filter(e => e.type === 'insumo' || e.type === 'operativo')
-      .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-
-    const totalInitialInvestment = expenses
-      .filter(e => e.type === 'inversion')
-      .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-
-    const grossProfit = totalFoodRevenue - totalRecipeCost;
-    const grossMarginPct = totalFoodRevenue > 0 ? (grossProfit / totalFoodRevenue) * 100 : 0;
-    const netOperatingBalance = totalSalesRevenue - totalInsumosExpenses;
-    const roiProgressPct =
-      totalInitialInvestment > 0 ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100)) : 100;
-
-    // Total de unidades vendidas para comparar contra rendimiento de insumos
-    const totalUnitsSold = sales.reduce(
-      (acc, s) => acc + s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0),
-      0
-    );
-
-    // ALARMAS INTELIGENTES:
-    const alarms = [];
-
-    // 1. Alarma de stock bajo o reposición urgente
-    products.forEach(p => {
-      if (Number(p.stock) <= Number(p.minStock)) {
-        alarms.push({
-          id: `alm_stock_${p.id}`,
-          severity: Number(p.stock) <= 5 ? 'critical' : 'warning',
-          title: `Reposición de Stock: ${p.name}`,
-          detail: `Quedan ${p.stock} unidades disponibles (Mínimo recomendado: ${p.minStock}).`
-        });
-      }
-    });
-
-    // 2. Alarma de consumo excesivo de insumos en función de las ventas realizadas
-    expenses
-      .filter(e => e.type === 'insumo' && Number(e.expectedYieldUnits) > 0)
-      .forEach(e => {
-        const expectedSoldRatio = (totalUnitsSold / Number(e.expectedYieldUnits)) * 100;
-        if (Number(e.consumedPercent) > expectedSoldRatio + 25) {
-          alarms.push({
-            id: `alm_yield_${e.id}`,
-            severity: 'critical',
-            title: `Consumo Excesivo de Insumo: ${e.category}`,
-            detail: `Se ha consumido el ${e.consumedPercent}% del lote (${e.description}), pero el volumen de ventas actual (${totalUnitsSold} uds vendidas) solo justifica un ~${Math.round(expectedSoldRatio)}% de uso. Revisar porciones o merma.`
-          });
-        }
-      });
-
-    // 3. Alarma de margen bajo en productos
-    products.forEach(p => {
-      const margin = ((p.price - p.cost) / p.price) * 100;
-      if (margin < 45) {
-        alarms.push({
-          id: `alm_margin_${p.id}`,
-          severity: 'warning',
-          title: `Rentabilidad Baja en Receta: ${p.name}`,
-          detail: `Su margen bruto actual es ${margin.toFixed(1)}%. Se recomienda mantener al menos 50% en comida rápida.`
-        });
-      }
-    });
-
-    // 4. Alarma de cuentas por cobrar
-    if (pendingCredit > 0) {
-      alarms.push({
-        id: 'alm_credit_pending',
-        severity: 'warning',
-        title: `Cuentas por Cobrar (Ventas a Crédito)`,
-        detail: `Tienes $${pendingCredit.toFixed(2)} pendientes por cobrar de facturas a crédito.`
-      });
-    }
-
-    return {
-      totalSalesRevenue,
-      totalFoodRevenue,
-      totalDeliveryRevenue,
-      totalRecipeCost,
-      cashCollected,
-      pendingCredit,
-      totalInsumosExpenses,
-      totalInitialInvestment,
-      grossProfit,
-      grossMarginPct,
-      netOperatingBalance,
-      roiProgressPct,
-      totalUnitsSold,
-      alarms
-    };
-  }, [sales, expenses, products]);
-
-  // ==========================================
-  // EXPORTACIÓN A EXCEL (CSV) Y RESPALDO JSON
-  // ==========================================
-  const exportToExcelCSV = (filename, headers, rows) => {
-    const BOM = '\uFEFF';
-    const csvLines = [
-      headers.join(';'),
-      ...rows.map(row =>
-        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
-      )
-    ];
-    const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification(`Reporte Excel (${filename}) descargado.`);
-  };
-
-  const handleExportFullBackupJSON = () => {
-    const backup = {
-      businessName: 'El Punto del Sabor',
-      exportedAt: new Date().toISOString(),
-      exchangeRate,
-      users,
-      products,
-      deliveryZones,
-      paymentMethods,
-      customers,
-      expenses,
-      sales,
-      supplyCatalog,
-      supplierCatalog
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification('Respaldo completo de la base de datos (.JSON) descargado.');
-  };
-
-  const copyTextToClipboard = (text) => {
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      setCopiedWhatsApp(true);
-      setTimeout(() => setCopiedWhatsApp(false), 3000);
-      showNotification('Texto copiado al portapapeles listo para pegar en WhatsApp.');
-    } catch (err) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text);
-        setCopiedWhatsApp(true);
-        setTimeout(() => setCopiedWhatsApp(false), 3000);
-        showNotification('Copiado al portapapeles.');
-      }
-    }
-  };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const found = users.find(
-      u =>
-        u.username.toLowerCase() === loginUsername.trim().toLowerCase() &&
-        u.password === loginPassword
-    );
-    if (!found) {
-      setLoginError('Usuario o contraseña incorrectos. Verifica tus credenciales.');
-      return;
-    }
-    setCurrentUser(found);
-    setLoginError('');
-    showNotification(`Bienvenido(a), ${found.username}`);
-  };
-
-  const handleLoadDemoSales = () => {
-    const demoSale = {
-      id: `sale_${Date.now()}`,
-      invoiceNumber: `EPDS-${1001 + sales.length}`,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString(),
-      cashier: currentUser?.username || 'Michelle Sifontes',
-      customerId: customers[0]?.id || 'cli_1',
-      customerName: customers[0]?.name || 'Cliente Prueba',
-      customerPhone: customers[0]?.phone || '0414-8823411',
-      customerDocument: customers[0]?.document || 'V-18452310',
-      deliveryAddress: customers[0]?.address || 'Urb. Los Olivos, Casa #14',
-      deliveryZoneName: 'Zona Cercana (Hasta 2 km)',
-      deliveryFee: 1.0,
-      items: [
-        {
-          productId: 'prod_combo_1',
-          name: 'Combo 1: 2 Perros Clásicos + Refresco',
-          category: 'combos',
-          qty: 1,
-          price: 4.2,
-          cost: 1.85,
-          subtotal: 4.2
-        }
-      ],
-      subtotal: 4.2,
-      totalCost: 1.85,
-      total: 5.2,
-      totalBs: 5.2 * exchangeRate,
-      exchangeRateUsed: exchangeRate,
-      paymentCondition: 'contado',
-      creditPaid: true,
-      paymentMethod: 'Pago Móvil',
-      paymentDetails: {
-        reference: String(Math.floor(100000 + Math.random() * 900000)),
-        senderName: customers[0]?.name || 'Cliente Prueba',
-        senderDocument: customers[0]?.document || 'V-18452310',
-        senderBank: '0102 - Banco de Venezuela (BDV)',
-        senderPhone: customers[0]?.phone || '0414-8823411',
-        sender: 'Cliente Prueba | 0102 - Banco de Venezuela'
-      },
-      notes: 'Pedido de prueba generado con 1 clic.'
-    };
-    setSales(prev => [demoSale, ...prev]);
-    showNotification(`Factura de prueba ${demoSale.invoiceNumber} generada con éxito.`);
-  };
-
-  if (isCustomerPublicView) {
-    const publicProducts = availableCustomerProducts.filter(p => {
-      const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
-      const q = customerSearch.trim().toLowerCase();
-      const matchQ =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q);
-      return matchCat && matchQ;
-    });
-
-    const selectedPublicZone =
-      deliveryZones.find(z => z.id === customerOrderForm.zoneId) ||
-      deliveryZones[0] || { name: 'Delivery', fee: 0 };
-
-    const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
-    const customerDeliveryFeeUSD =
-      customerCart.length > 0 ? Number(selectedPublicZone.fee || 0) : 0;
-    const customerTotalUSD = customerSubtotalUSD + customerDeliveryFeeUSD;
-
-    const addCustomerItem = (prod) => {
-      setCustomerCart(prev => {
-        const exists = prev.find(i => i.id === prod.id);
-        if (exists) {
-          return prev.map(i => (i.id === prod.id ? { ...i, qty: i.qty + 1 } : i));
-        }
-        return [
-          ...prev,
-          {
-            id: prod.id,
-            name: prod.name,
-            category: prod.category,
-            price: Number(prod.price),
-            cost: Number(prod.cost || 0),
-            qty: 1
-          }
-        ];
-      });
-    };
-
-    const updateCustomerQty = (id, delta) => {
-      setCustomerCart(prev =>
-        prev
-          .map(i => (i.id === id ? { ...i, qty: i.qty + delta } : i))
-          .filter(i => i.qty > 0)
-      );
-    };
-
-    const handleSendCustomerOrderWhatsApp = () => {
-      if (customerCart.length === 0) {
-        showNotification('Selecciona al menos un producto del menú.', 'error');
-        return;
-      }
-      if (!customerOrderForm.name.trim() || !customerOrderForm.phone.trim()) {
-        showNotification('Por favor ingresa tu Nombre y Teléfono de contacto.', 'error');
-        return;
-      }
-      if (!customerOrderForm.address.trim()) {
-        showNotification('Por favor ingresa la Dirección exacta de envío.', 'error');
-        return;
-      }
-
-      const cleanName = customerOrderForm.name.trim();
-      const cleanDoc = customerOrderForm.document.trim() || 'V-00000000';
-      const cleanPhone = customerOrderForm.phone.trim();
-      const cleanAddr = customerOrderForm.address.trim();
-
-      setCustomers(prev => {
-        const exists = prev.some(
-          c =>
-            c.name.toLowerCase() === cleanName.toLowerCase() ||
-            (cleanPhone && c.phone === cleanPhone)
-        );
-        if (exists) return prev;
-        return [
-          {
-            id: `cli_${Date.now()}`,
-            name: cleanName,
-            document: cleanDoc,
-            phone: cleanPhone,
-            address: cleanAddr,
-            defaultZoneId: customerOrderForm.zoneId
-          },
-          ...prev
-        ];
-      });
-
-      const rawBizPhone = businessWhatsApp.replace(/[^0-9]/g, '');
-      const intlPhone = rawBizPhone.startsWith('0')
-        ? `58${rawBizPhone.slice(1)}`
-        : rawBizPhone;
-
-      const orderText =
-        `🌭 *NUEVO PEDIDO DELIVERY - EL PUNTO DEL SABOR*\n\n` +
-        `👤 *DATOS DEL CLIENTE PARA FACTURAR:*\n` +
-        `• *Nombre:* ${cleanName}\n` +
-        `• *Cédula / RIF:* ${cleanDoc}\n` +
-        `• *Teléfono:* ${cleanPhone}\n` +
-        `• *Dirección de Envío:* ${cleanAddr}\n` +
-        `• *Ruta Delivery:* ${selectedPublicZone.name} ($${customerDeliveryFeeUSD.toFixed(2)})\n\n` +
-        `📋 *DETALLE DEL PEDIDO:*\n` +
-        customerCart
-          .map(
-            i =>
-              `• ${i.qty}x *${i.name}* — $${(i.price * i.qty).toFixed(2)} (Bs. ${(
-                i.price *
-                i.qty *
-                exchangeRate
-              ).toFixed(2)})`
-          )
-          .join('\n') +
-        `\n\n💵 *Subtotal Productos:* $${customerSubtotalUSD.toFixed(2)}\n` +
-        `🛵 *Costo de Envío:* $${customerDeliveryFeeUSD.toFixed(2)}\n` +
-        `💰 *TOTAL A FACTURAR: $${customerTotalUSD.toFixed(2)} (Bs. ${(
-          customerTotalUSD * exchangeRate
-        ).toFixed(2)})*\n\n` +
-        `💳 *DATOS DEL PAGO:*\n` +
-        `• *Modalidad:* ${
-          customerOrderForm.paymentCondition === 'credito'
-            ? 'Solicitud a Crédito'
-            : 'Pago de Contado'
-        }\n` +
-        `• *Forma de Pago:* ${customerOrderForm.paymentMethod}\n` +
-        `• *Banco / Cuenta Emisor:* ${customerOrderForm.paymentSenderBank || 'N/A'}\n` +
-        `• *N° Referencia / Operación:* ${
-          customerOrderForm.paymentReference.trim() || 'Envío comprobante por aquí'
-        }` +
-        (customerOrderForm.notes.trim()
-          ? `\n\n📝 *Nota del Cliente:* ${customerOrderForm.notes.trim()}`
-          : '');
-
-      copyTextToClipboard(orderText);
-      window.open(
-        `https://wa.me/${intlPhone}?text=${encodeURIComponent(orderText)}`,
-        '_blank'
-      );
-    };
-
-    return (
-      <div className="min-h-screen bg-stone-950 text-white flex flex-col">
-        <header className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-stone-950 shadow-xl sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-stone-950 text-white flex items-center justify-center text-2xl shadow">
-                🌭
-              </div>
-              <div>
-                <span className="px-2 py-0.5 rounded-full bg-stone-950 text-amber-400 text-[10px] font-black uppercase">
-                  Menú Digital Oficial • Servicio Delivery
-                </span>
-                <h1 className="text-xl font-black tracking-tight text-stone-950">
-                  EL PUNTO DEL SABOR
-                </h1>
-                <p className="text-xs font-extrabold text-stone-900">
-                  📲 Pedidos WhatsApp: {businessWhatsApp} • Tasa BCV: Bs. {Number(exchangeRate).toFixed(2)}/$
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadCustomerMenuPDF}
-                className="px-3 py-2 rounded-xl bg-stone-950 hover:bg-stone-800 text-amber-400 text-xs font-extrabold flex items-center gap-1.5 shadow"
-              >
-                <FileDown className="w-4 h-4" /> Descargar Menú PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCustomerPublicView(false)}
-                className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 text-xs font-black shadow"
-              >
-                ← Volver al Panel Administrativo
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div className="max-w-7xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="bg-stone-900 p-4 rounded-3xl border border-stone-800 space-y-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={customerSearch}
-                  onChange={e => setCustomerSearch(e.target.value)}
-                  placeholder="Busca tu perro caliente, combo, hamburguesa o bebida favorita..."
-                  className="w-full pl-10 pr-4 py-2 rounded-2xl bg-stone-950 border border-stone-700 text-xs text-white outline-none focus:border-amber-500"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                {CATEGORIES.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCustomerFilterCat(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition ${
-                      customerFilterCat === cat.id
-                        ? 'bg-amber-500 text-stone-950 shadow'
-                        : 'bg-stone-950 text-stone-400 hover:text-white'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {publicProducts.map(prod => {
-                const inCart = customerCart.find(i => i.id === prod.id);
-                return (
-                  <div
-                    key={prod.id}
-                    className="bg-stone-900 rounded-3xl border border-stone-800 overflow-hidden shadow-lg flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="relative h-44 bg-stone-800 overflow-hidden">
-                        <img
-                          src={prod.image}
-                          alt={prod.name}
-                          onError={e => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src =
-                              FALLBACK_BY_CATEGORY[prod.category] || FALLBACK_BY_CATEGORY.perros;
-                          }}
-                          className="w-full h-full object-cover"
-                        />
-                        {inCart && (
-                          <span className="absolute top-3 right-3 px-3 py-1 rounded-xl bg-amber-500 text-stone-950 font-black text-xs shadow">
-                            Seleccionado: {inCart.qty}
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-black text-sm text-white">{prod.name}</h3>
-                        <p className="text-xs text-stone-400 mt-1 leading-relaxed">
-                          {prod.description}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="px-4 pb-4 pt-2 border-t border-stone-800/80 flex items-center justify-between">
-                      <div>
-                        <div className="text-lg font-black text-amber-400">
-                          ${Number(prod.price).toFixed(2)}
-                        </div>
-                        <div className="text-[11px] font-bold text-stone-400">
-                          Bs. {(Number(prod.price) * exchangeRate).toFixed(2)}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => addCustomerItem(prod)}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow"
-                      >
-                        <Plus className="w-4 h-4" /> Quiero este
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="lg:col-span-4">
-            <div className="bg-stone-900 rounded-3xl border border-stone-800 p-5 space-y-3.5 sticky top-24 max-h-[calc(100vh-110px)] overflow-y-auto">
-              <div className="border-b border-stone-800 pb-2.5">
-                <h2 className="text-base font-black text-amber-400">
-                  🛵 Arma tu Pedido y Datos de Envío
-                </h2>
-                <p className="text-xs text-stone-400">
-                  Completa tus datos, dirección y forma de pago para enviarnos tu orden lista para facturar al WhatsApp ({businessWhatsApp}).
-                </p>
-              </div>
-
-              {customerCart.length === 0 ? (
-                <div className="py-5 text-center text-xs text-stone-500 border border-dashed border-stone-800 rounded-2xl p-4">
-                  Toca <strong>"Quiero este"</strong> en cualquier perro caliente, combo o bebida para armar tu pedido.
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                  {customerCart.map(item => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between bg-stone-950 p-2.5 rounded-2xl border border-stone-800 text-xs"
-                    >
-                      <div className="flex-1 pr-2">
-                        <div className="font-bold text-white">{item.name}</div>
-                        <div className="text-amber-400 font-bold">${item.price.toFixed(2)} c/u</div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => updateCustomerQty(item.id, -1)}
-                          className="w-6 h-6 rounded-lg bg-stone-800 text-white flex items-center justify-center"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-5 text-center font-black">{item.qty}</span>
-                        <button
-                          type="button"
-                          onClick={() => updateCustomerQty(item.id, 1)}
-                          className="w-6 h-6 rounded-lg bg-amber-500 text-stone-950 flex items-center justify-center font-bold"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-2.5 pt-2 border-t border-stone-800 text-xs">
-                <div className="text-[11px] font-black text-amber-400 uppercase">
-                  1. Datos del Cliente y Dirección de Entrega:
-                </div>
-                <input
-                  type="text"
-                  value={customerOrderForm.name}
-                  onChange={e =>
-                    setCustomerOrderForm({ ...customerOrderForm, name: e.target.value })
-                  }
-                  placeholder="Nombre y Apellido *"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={customerOrderForm.document}
-                    onChange={e =>
-                      setCustomerOrderForm({ ...customerOrderForm, document: e.target.value })
-                    }
-                    placeholder="Cédula / RIF *"
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
-                  />
-                  <input
-                    type="text"
-                    value={customerOrderForm.phone}
-                    onChange={e =>
-                      setCustomerOrderForm({ ...customerOrderForm, phone: e.target.value })
-                    }
-                    placeholder="Teléfono WhatsApp *"
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-stone-400 mb-1">
-                    🛵 Selecciona tu Zona / Ruta de Envío:
-                  </label>
-                  <select
-                    value={customerOrderForm.zoneId}
-                    onChange={e =>
-                      setCustomerOrderForm({ ...customerOrderForm, zoneId: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs font-bold outline-none focus:border-amber-500"
-                  >
-                    {deliveryZones.map(z => (
-                      <option key={z.id} value={z.id}>
-                        {z.name} (+${Number(z.fee).toFixed(2)})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <textarea
-                  rows={2}
-                  value={customerOrderForm.address}
-                  onChange={e =>
-                    setCustomerOrderForm({ ...customerOrderForm, address: e.target.value })
-                  }
-                  placeholder="📍 Dirección exacta de envío (Urbanización, calle, casa, referencia) *"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
-                />
-
-                <div className="text-[11px] font-black text-amber-400 uppercase pt-1">
-                  2. Forma de Pago:
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">
-                      Método de Pago:
-                    </label>
-                    <select
-                      value={customerOrderForm.paymentMethod}
-                      onChange={e => {
-                        const m = e.target.value;
-                        const isBinOrCash =
-                          m.toLowerCase().includes('binance') ||
-                          m.toLowerCase().includes('efectivo') ||
-                          m.toLowerCase().includes('zelle');
-                        setCustomerOrderForm({
-                          ...customerOrderForm,
-                          paymentMethod: m,
-                          paymentSenderBank: isBinOrCash ? '' : VENEZUELAN_BANKS[0]
-                        });
-                      }}
-                      className="w-full px-2.5 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs font-bold"
-                    >
-                      {paymentMethods.map(pm => (
-                        <option key={pm.id} value={pm.name}>
-                          {pm.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">
-                      N° Referencia (Opcional):
-                    </label>
-                    <input
-                      type="text"
-                      value={customerOrderForm.paymentReference}
-                      onChange={e =>
-                        setCustomerOrderForm({
-                          ...customerOrderForm,
-                          paymentReference: e.target.value
-                        })
-                      }
-                      placeholder="Ej: 948271"
-                      className="w-full px-2.5 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs"
-                    />
-                  </div>
-                </div>
-
-                {customerOrderForm.paymentMethod.toLowerCase().includes('binance') ? (
-                  <input
-                    type="text"
-                    value={customerOrderForm.paymentSenderBank}
-                    onChange={e =>
-                      setCustomerOrderForm({
-                        ...customerOrderForm,
-                        paymentSenderBank: e.target.value
-                      })
-                    }
-                    placeholder="🟡 Tu Usuario / Correo / ID Binance"
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-amber-500/60 text-white text-xs"
-                  />
-                ) : !customerOrderForm.paymentMethod.toLowerCase().includes('efectivo') ? (
-                  <select
-                    value={customerOrderForm.paymentSenderBank}
-                    onChange={e =>
-                      setCustomerOrderForm({
-                        ...customerOrderForm,
-                        paymentSenderBank: e.target.value
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs"
-                  >
-                    <option value="">-- Banco desde donde realizas el pago --</option>
-                    {VENEZUELAN_BANKS.map(b => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-
-                <input
-                  type="text"
-                  value={customerOrderForm.notes}
-                  onChange={e =>
-                    setCustomerOrderForm({ ...customerOrderForm, notes: e.target.value })
-                  }
-                  placeholder="📝 Nota de cocina (Ej: Con todo, salsas aparte...)"
-                  className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs"
-                />
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-stone-950 border border-stone-800 space-y-1 text-xs">
-                <div className="flex justify-between text-stone-400">
-                  <span>Subtotal Productos:</span>
-                  <span>${customerSubtotalUSD.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-stone-400">
-                  <span>Costo Delivery ({selectedPublicZone.name}):</span>
-                  <span>${customerDeliveryFeeUSD.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-baseline pt-1.5 border-t border-stone-800">
-                  <span className="text-xs font-bold text-amber-400">TOTAL A PAGAR:</span>
-                  <div className="text-right">
-                    <div className="text-xl font-black text-white">
-                      ${customerTotalUSD.toFixed(2)}
-                    </div>
-                    <div className="text-xs text-amber-400 font-bold">
-                      Bs. {(customerTotalUSD * exchangeRate).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                disabled={customerCart.length === 0}
-                onClick={handleSendCustomerOrderWhatsApp}
-                className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-stone-950 font-black text-xs shadow-lg transition flex items-center justify-center gap-2"
-              >
-                <Smartphone className="w-4 h-4" /> Enviar Pedido y Datos por WhatsApp
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-amber-500/30">
-          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 p-6 text-white text-center">
-            <div className="w-16 h-16 rounded-2xl bg-stone-950/90 mx-auto flex items-center justify-center text-3xl shadow-lg mb-3">
-              🌭
-            </div>
-            <h1 className="text-2xl font-black tracking-tight">EL PUNTO DEL SABOR</h1>
-            <p className="text-xs font-medium text-amber-100 mt-1">
-              Sistema Integral POS Delivery, Costos, Inventario y KPIs
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="p-6 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase mb-2">
-                Acceso Rápido de Socios Autorizados:
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {users.map(u => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => {
-                      setLoginUsername(u.username);
-                      setLoginPassword(u.password);
-                      setLoginError('');
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition ${
-                      loginUsername === u.username
-                        ? 'border-amber-500 bg-amber-50 text-stone-900 font-bold'
-                        : 'border-stone-200 hover:bg-stone-50 text-stone-600'
-                    }`}
-                  >
-                    <div className="text-xs font-extrabold">{u.username}</div>
-                    <div className="text-[10px] text-stone-500">Clave: {u.password}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Usuario</label>
-              <input
-                type="text"
-                value={loginUsername}
-                onChange={e => setLoginUsername(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">Contraseña</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                required
-              />
-            </div>
-
-            {loginError && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
-                {loginError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-extrabold text-sm shadow-lg transition"
-            >
-              Entrar al Sistema de Gestión
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // Ventas filtradas para el Cierre Diario
-  const dailyClosingSales = sales.filter(s => s.date === closingDate);
-  const dailyProductSummary = {};
-  dailyClosingSales.forEach(s => {
-    s.items.forEach(item => {
-      if (!dailyProductSummary[item.name]) {
-        dailyProductSummary[item.name] = { qty: 0, totalUSD: 0, category: item.category };
-      }
-      dailyProductSummary[item.name].qty += item.qty;
-      dailyProductSummary[item.name].totalUSD += item.subtotal;
-    });
-  });
-
+  // Renderizado del componente (Vistas principales)
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col [&_*]:scrollbar-thin [&_*]:scrollbar-thumb-stone-300 [&_*]:scrollbar-track-transparent">
       {/* NOTIFICACIÓN FLOTANTE */}
@@ -2871,7 +1942,7 @@ export default function App() {
         </div>
       )}
 
-      {/* BARRA SUPERIOR */}
+      {/* BARRA SUPERIOR PRINCIPAL */}
       <header className="bg-stone-900 text-white shadow-lg sticky top-0 z-30 print:hidden">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -2891,9 +1962,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Controles Rápidos Superiores */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Tasa BCV / Paralelo con Sincronización Automática */}
             <div className="flex items-center gap-1.5 bg-stone-800 border border-stone-700 px-3 py-1.5 rounded-xl text-xs">
               <div className="flex flex-col">
                 <span className="text-amber-400 font-extrabold text-[10px] leading-tight">
@@ -2919,7 +1988,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Botón de Alarmas Activas */}
             <button
               onClick={() => setActiveTab('kpis')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
@@ -2932,7 +2000,6 @@ export default function App() {
               <span>Alarmas ({kpiMetrics.alarms.length})</span>
             </button>
 
-            {/* Botón Destacado: Menú Digital Descargable y Enlace para Clientes */}
             <button
               onClick={() => setShowShareMenuModal(true)}
               className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-black flex items-center gap-1.5 shadow transition"
@@ -2941,7 +2008,6 @@ export default function App() {
               <span>Menú Clientes (Descargar / Enlace)</span>
             </button>
 
-            {/* Botón Rápido: Cómo Poner en Marcha */}
             <button
               onClick={() => setActiveTab('architecture')}
               className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-extrabold flex items-center gap-1.5 transition"
@@ -2950,7 +2016,6 @@ export default function App() {
               <span>Probar / Usar Fuera del Chat</span>
             </button>
 
-            {/* Cerrar Sesión / Cambiar entre Michelle y Jhonny */}
             <button
               onClick={() => setCurrentUser(null)}
               className="px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-red-600/80 text-stone-300 hover:text-white text-xs font-bold flex items-center gap-1 transition"
@@ -2962,7 +2027,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* BARRA DE NAVEGACIÓN DE MÓDULOS */}
         <div className="bg-stone-950/90 border-t border-stone-800">
           <div className="max-w-7xl mx-auto px-4 flex items-center gap-1 overflow-x-auto py-1.5">
             {[
@@ -2996,16 +2060,14 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-7xl w-full mx-auto px-4 py-5 flex-1">
+        
         {/* ========================================== */}
         {/* MÓDULO 1: FACTURACIÓN Y POS DIGITAL DELIVERY */}
         {/* ========================================== */}
         {activeTab === 'pos' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:h-[calc(100vh-140px)] lg:overflow-hidden">
-            {/* COLUMNA IZQUIERDA (7 cols): MENÚ DIGITAL CON BARRA DE DESPLAZAMIENTO INDEPENDIENTE */}
             <div className="lg:col-span-7 lg:h-full lg:overflow-y-auto lg:pr-2 space-y-4 scrollbar-thin">
-              {/* Buscador en tiempo real letra por letra + Filtro de Etapas (Fijo arriba del menú) */}
               <div className="bg-white p-4 rounded-3xl shadow-sm border border-stone-200 space-y-3 sticky top-0 z-10">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="relative flex-1 min-w-[220px]">
@@ -3031,9 +2093,8 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Pestañas de Clasificación del Menú */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => setPosCategory(cat.id)}
@@ -3049,7 +2110,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Tarjetas de Productos del Menú Digital (1 Clic para Agregar) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 pb-4">
                 {filteredProducts.map(prod => {
                   const inCart = cart.find(i => i.productId === prod.id);
@@ -3119,7 +2179,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* COLUMNA DERECHA (5 cols): COMANDA / FACTURA DELIVERY CON BARRA DE DESPLAZAMIENTO PROPIA */}
             <div className="lg:col-span-5 lg:h-full lg:overflow-y-auto lg:pl-1 pb-4 scrollbar-thin">
               <div className="bg-white rounded-3xl shadow-md border border-stone-200 p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-stone-200 pb-3">
@@ -3141,7 +2200,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Selección de Cliente y Dirección Obligatoria */}
                 <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-extrabold text-stone-700 flex items-center gap-1">
@@ -3181,25 +2239,36 @@ export default function App() {
                     />
                   </div>
 
+                  {/* BUSCADOR INTELIGENTE DE RUTAS DE DELIVERY CON DATALIST */}
                   <div>
                     <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                      🛵 Ruta de Domicilio / Tarifa de Envío:
+                      🛵 Escriba o seleccione su Ruta de Domicilio:
                     </label>
-                    <select
-                      value={selectedZoneId}
-                      onChange={e => setSelectedZoneId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900"
-                    >
+                    <input
+                      type="text"
+                      list="zones-list"
+                      value={zoneSearchInput}
+                      onChange={e => {
+                        setZoneSearchInput(e.target.value);
+                        // Buscar coincidencia exacta en las opciones desplegadas para setear el ID
+                        const matched = deliveryZones.find(
+                          z => `${z.name} - $${Number(z.fee).toFixed(2)}` === e.target.value
+                        );
+                        if (matched) {
+                          setSelectedZoneId(matched.id);
+                        }
+                      }}
+                      placeholder="Ej: Casco Central, Retiro, Zona Cercana..."
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                    <datalist id="zones-list">
                       {deliveryZones.map(z => (
-                        <option key={z.id} value={z.id}>
-                          {z.name} — ${Number(z.fee).toFixed(2)}
-                        </option>
+                        <option key={z.id} value={`${z.name} - $${Number(z.fee).toFixed(2)}`} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
                 </div>
 
-                {/* Lista de Productos en la Factura */}
                 <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
                   {cart.length === 0 ? (
                     <div className="text-center py-6 text-xs text-stone-400 border border-dashed border-stone-200 rounded-2xl">
@@ -3242,7 +2311,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Modalidad de Pago: Contado vs Crédito y Datos de Pago Móvil */}
                 <div className="space-y-2.5 pt-2 border-t border-stone-200">
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -3307,6 +2375,25 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* SELECCIÓN DE CUENTA RECEPTORA PROPIA */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                          📥 ¿A qué cuenta nuestra entró el dinero?
+                        </label>
+                        <select
+                          value={selectedReceivingAccountId}
+                          onChange={e => setSelectedReceivingAccountId(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          {receivingAccounts.length === 0 && <option value="">Sin cuentas (Configurar en Ajustes)</option>}
+                          {receivingAccounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <div className="pt-1 border-t border-stone-200">
                         <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
                           Datos del Emisor del Pago (Celdas Individuales):
@@ -3338,7 +2425,6 @@ export default function App() {
                             />
                           </div>
 
-                          {/* Campo dinámico: Si es Binance muestra Usuario Binance, si es Banco muestra desplegable de todos los bancos de Venezuela + opción de editar */}
                           <div>
                             {selectedPaymentMethod.toLowerCase().includes('binance') ? (
                               <>
@@ -3443,12 +2529,11 @@ export default function App() {
                     type="text"
                     value={orderNotes}
                     onChange={e => setOrderNotes(e.target.value)}
-                    placeholder="Nota de cocina o entrega (Ej: Sin cebolla, llamar afuera)..."
+                    placeholder="📝 Nota de cocina o entrega (Ej: Sin cebolla, llamar afuera)..."
                     className="w-full px-3 py-1.5 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
                   />
                 </div>
 
-                {/* Totales de la Factura */}
                 <div className="bg-stone-900 text-white p-4 rounded-2xl space-y-1.5">
                   <div className="flex justify-between text-xs text-stone-400">
                     <span>Subtotal Comida:</span>
@@ -3471,10 +2556,10 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={handleCheckout}
+                  onClick={handlePrepareCheckout}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-stone-950 font-black text-sm shadow-lg transition flex items-center justify-center gap-2"
                 >
-                  <Printer className="w-4 h-4" /> Emitir Factura y Registrar Venta
+                  <Printer className="w-4 h-4" /> Emitir Factura y Revisar Venta
                 </button>
               </div>
             </div>
@@ -3486,7 +2571,6 @@ export default function App() {
         {/* ========================================== */}
         {activeTab === 'catalog' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Formulario para Crear / Editar Producto y Subir Imagen */}
             <div className="lg:col-span-4">
               <form
                 onSubmit={handleSaveProduct}
@@ -3518,7 +2602,7 @@ export default function App() {
                       onChange={e => setProductForm({ ...productForm, category: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
                     >
-                      {CATEGORIES.filter(c => c.id !== 'todos').map(c => (
+                      {categories.filter(c => c.id !== 'todos').map(c => (
                         <option key={c.id} value={c.id}>
                           {c.label}
                         </option>
@@ -3602,7 +2686,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Carga de Imagen desde Dispositivo o URL */}
                 <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
                   <label className="block text-xs font-extrabold text-amber-900">
                     📸 Fotografía del Producto (Subir desde Celular/PC):
@@ -3664,7 +2747,7 @@ export default function App() {
                           setEditingProduct(null);
                           setProductForm({
                             name: '',
-                            category: 'perros',
+                            category: categories.length > 0 ? categories[0].id : 'perros',
                             stage: 1,
                             price: '',
                             cost: '',
@@ -3684,7 +2767,6 @@ export default function App() {
               </form>
             </div>
 
-            {/* Listado Completo del Menú por Etapas */}
             <div className="lg:col-span-8 space-y-4">
               <div className="bg-white p-4 rounded-3xl border border-stone-200 flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -3821,7 +2903,6 @@ export default function App() {
         {activeTab === 'customers' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Tarifador de Rutas Delivery */}
               <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
                 <div>
                   <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
@@ -3890,7 +2971,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Control de Ventas a Crédito Pendientes de Cobro */}
               <div className="lg:col-span-7 bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -3943,7 +3023,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Base de Datos de Clientes y su Histórico de Compras */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -4518,7 +3597,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Resumen de Productos Vendidos en el Día */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
                 <h3 className="font-black text-sm text-stone-900">
@@ -4551,7 +3629,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Facturas Emitidas en el Día */}
               <div className="lg:col-span-7 bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-black text-sm text-stone-900">
@@ -4589,7 +3666,8 @@ export default function App() {
                         <div className="text-[11px] text-stone-600">📍 {s.deliveryAddress}</div>
                         <div className="text-[11px] text-stone-500">
                           💳 <strong>{s.paymentMethod}</strong> | Ref:{' '}
-                          <strong>{s.paymentDetails?.reference}</strong> | Emisor:{' '}
+                          <strong>{s.paymentDetails?.reference}</strong> | Receptor:{' '}
+                          <strong>{s.receivingAccountName || 'N/A'}</strong> | Emisor:{' '}
                           <strong>{s.paymentDetails?.senderName || s.paymentDetails?.sender}</strong>{' '}
                           ({s.paymentDetails?.senderDocument || 'S/C'} •{' '}
                           {s.paymentDetails?.senderBank || ''})
@@ -4643,7 +3721,6 @@ export default function App() {
         {/* ========================================== */}
         {activeTab === 'kpis' && (
           <div className="space-y-6">
-            {/* Tarjetas de KPIs Financieros con Porcentajes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm">
                 <span className="text-xs font-bold text-stone-500">Ingresos Brutos por Ventas</span>
@@ -4696,7 +3773,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Centro de Alarmas y Niveles de Atención (Consumo Excesivo / Reposición) */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
               <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-600" /> Sistema de Alarmas de Consumo Excesivo, Reposición y Rentabilidad
@@ -4718,7 +3794,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Hoja de Ruta de las 5 Etapas del Emprendimiento */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3">
               <h3 className="text-base font-black text-stone-900">
                 📈 Plan Maestro de Crecimiento por Etapas ("El Punto del Sabor")
@@ -4742,44 +3817,83 @@ export default function App() {
         )}
 
         {/* ========================================== */}
-        {/* MÓDULO 7: PROBAR Y PONER EN MARCHA FUERA DEL CHAT */}
+        {/* MÓDULO 7: PROBAR Y PONER EN MARCHA (RESPALDOS) */}
         {/* ========================================== */}
         {activeTab === 'architecture' && (
           <div className="space-y-6">
-            {/* Simulador de 1 Clic */}
             <div className="bg-white p-6 rounded-3xl border-2 border-amber-500 shadow-sm space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold uppercase">
-                    Simulador Interactivo en Vivo
+                  <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold uppercase flex items-center w-fit gap-1">
+                    <Landmark className="w-3.5 h-3.5" /> Base de Datos del Sistema
                   </span>
                   <h2 className="text-lg font-black text-stone-900 mt-2">
-                    Prueba el sistema con 1 clic o descarga tu respaldo de base de datos
+                    Gestiona, Restaura y Exporta toda tu Información
                   </h2>
                   <p className="text-xs text-stone-600 mt-1">
-                    Todos los cambios que hagas aquí quedan guardados automáticamente en el navegador.
+                    Exporta tablas a Excel o usa el formato JSON para crear copias de seguridad de toda la tienda.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleLoadDemoSales}
-                    className="px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-black text-xs shadow flex items-center gap-2"
-                  >
-                    <Sparkles className="w-4 h-4" /> + Simular Venta Delivery Ahora (1 Clic)
-                  </button>
+              </div>
+
+              {/* Botones de Importación, Exportación JSON y CSV */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl space-y-3">
+                  <h3 className="font-bold text-sm text-stone-900">1. Crear Copia de Respaldo</h3>
                   <button
                     type="button"
                     onClick={handleExportFullBackupJSON}
-                    className="px-4 py-3 rounded-2xl bg-stone-900 text-amber-400 font-bold text-xs flex items-center gap-2"
+                    className="w-full py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold text-xs flex items-center justify-center gap-2 transition"
                   >
-                    <Download className="w-4 h-4" /> Descargar Base de Datos (.JSON)
+                    <Download className="w-4 h-4" /> Descargar Base de Datos Completa (.JSON)
+                  </button>
+                </div>
+                
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                  <h3 className="font-bold text-sm text-amber-900">2. Restaurar Sistema desde Copia</h3>
+                  <p className="text-[10px] text-amber-700">Selecciona el archivo .json que descargaste previamente para recuperar tu información.</p>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportFullBackupJSON}
+                    className="w-full text-xs text-stone-700 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-amber-600 file:text-white file:font-bold file:cursor-pointer hover:file:bg-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-stone-200">
+                <h3 className="font-bold text-sm text-stone-900 mb-3">3. Exportar Directorios a Excel (.CSV)</h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      exportToExcelCSV(
+                        'Productos.csv',
+                        ['ID', 'Nombre', 'Categoria', 'Precio USD', 'Costo USD', 'Stock'],
+                        products.map(p => [p.id, p.name, p.category, p.price, p.cost, p.stock])
+                      )
+                    }
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                  >
+                    <Download className="w-4 h-4" /> Bajar Productos a Excel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      exportToExcelCSV(
+                        'Clientes.csv',
+                        ['Nombre', 'Telefono', 'Documento', 'Direccion Exacta'],
+                        customers.map(c => [c.name, c.phone, c.document, c.address])
+                      )
+                    }
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                  >
+                    <Download className="w-4 h-4" /> Bajar Clientes a Excel
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Guía Paso a Paso Fuera del Chat */}
             <div className="bg-stone-900 text-white p-6 rounded-3xl space-y-4">
               <h3 className="text-lg font-black text-amber-400">
                 🚀 ¿Cómo ponerlo en marcha fuera de este chat en tu Celular y PC?
@@ -4815,230 +3929,395 @@ export default function App() {
         )}
 
         {/* ========================================== */}
-        {/* MÓDULO 8: USUARIOS (CAMBIO DE CLAVE) Y TIPOS DE PAGO */}
+        {/* MÓDULO 8: USUARIOS (CAMBIO DE CLAVE) Y AJUSTES */}
         {/* ========================================== */}
         {activeTab === 'settings' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Cambio de Clave del Usuario Actual */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
-              <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-amber-600" /> Seguridad y Cambio de Clave ({currentUser.username})
-              </h2>
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  if (
-                    !passwordChangeForm.newPassword ||
-                    passwordChangeForm.newPassword !== passwordChangeForm.confirmPassword
-                  ) {
-                    showNotification('Las contraseñas no coinciden.', 'error');
-                    return;
-                  }
-                  setUsers(prev =>
-                    prev.map(u =>
-                      u.id === currentUser.id
-                        ? { ...u, password: passwordChangeForm.newPassword }
-                        : u
-                    )
-                  );
-                  setPasswordChangeForm({ newPassword: '', confirmPassword: '' });
-                  showNotification(`Contraseña de ${currentUser.username} actualizada.`);
-                }}
-                className="space-y-3"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Nueva Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordChangeForm.newPassword}
-                    onChange={e =>
-                      setPasswordChangeForm({ ...passwordChangeForm, newPassword: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    Confirmar Nueva Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordChangeForm.confirmPassword}
-                    onChange={e =>
-                      setPasswordChangeForm({
-                        ...passwordChangeForm,
-                        confirmPassword: e.target.value
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs"
-                >
-                  Actualizar Mi Contraseña
-                </button>
-              </form>
-
-              {/* Configuración de la Clave Especial para Eliminar Registros */}
-              <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black text-red-700 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4" /> Clave Especial para Autorizar Eliminaciones
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-red-50 text-red-800 border border-red-200 text-[11px] font-black">
-                    Actual: {securityDeletePin}
-                  </span>
-                </div>
-                <p className="text-[11px] text-stone-500">
-                  Esta clave se solicita cada vez que alguien intenta eliminar productos del menú, rutas de delivery, facturas, gastos o clientes.
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Columna Izquierda: Categorías y Seguridad */}
+            <div className="space-y-6">
+              
+              {/* Edición de Categorías */}
+              <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-amber-600" /> Edición de Categorías del Menú
+                </h2>
+                <p className="text-xs text-stone-500">Agrega o elimina las categorías (pestañas) que aparecerán en el catálogo.</p>
+                
                 <form
                   onSubmit={e => {
                     e.preventDefault();
-                    if (!newDeletePinInput.trim()) return;
-                    setSecurityDeletePin(newDeletePinInput.trim());
-                    setNewDeletePinInput('');
-                    showNotification('Clave especial de eliminación actualizada correctamente.');
+                    if (!newCategoryName.trim()) return;
+                    const newId = newCategoryName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    setCategories(prev => [...prev, { id: newId, label: newCategoryName.trim() }]);
+                    setNewCategoryName('');
+                    showNotification('Categoría agregada exitosamente.');
                   }}
                   className="flex gap-2"
                 >
                   <input
                     type="text"
-                    value={newDeletePinInput}
-                    onChange={e => setNewDeletePinInput(e.target.value)}
-                    placeholder="Nueva clave especial (Ej: 2026)"
-                    className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                    value={newCategoryName}
+                    onChange={e => setNewCategoryName(e.target.value)}
+                    placeholder="Ej: 🍕 Pizzas, 🥗 Ensaladas"
+                    className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900 outline-none focus:ring-2 focus:ring-amber-500"
+                    required
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs"
+                    className="px-4 py-2 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs transition hover:bg-stone-800"
                   >
-                    Cambiar Clave
-                  </button>
-                </form>
-              </div>
-
-              {/* Registro de Nuevos Usuarios Operadores del Sistema */}
-              <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
-                <h3 className="text-sm font-black text-stone-900 flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-amber-600" /> Usuarios Registrados en el Sistema ({users.length})
-                </h3>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    if (!newUserForm.username.trim() || !newUserForm.password.trim()) {
-                      showNotification('Completa el nombre de usuario y contraseña.', 'error');
-                      return;
-                    }
-                    const createdUser = {
-                      id: `usr_${Date.now()}`,
-                      username: newUserForm.username.trim(),
-                      password: newUserForm.password.trim(),
-                      role: newUserForm.role || 'Operador de Ventas'
-                    };
-                    setUsers(prev => {
-                      const updated = [...prev, createdUser];
-                      persistToCloud({ users: updated });
-                      return updated;
-                    });
-                    setNewUserForm({ username: '', password: '', role: 'Operador de Ventas' });
-                    showNotification(`Usuario "${createdUser.username}" guardado permanentemente.`);
-                  }}
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-2"
-                >
-                  <input
-                    type="text"
-                    value={newUserForm.username}
-                    onChange={e => setNewUserForm({ ...newUserForm, username: e.target.value })}
-                    placeholder="Nuevo Usuario"
-                    className="px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
-                  />
-                  <input
-                    type="text"
-                    value={newUserForm.password}
-                    onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                    placeholder="Contraseña"
-                    className="px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-2 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs"
-                  >
-                    + Agregar Usuario
+                    + Agregar
                   </button>
                 </form>
 
-                <div className="space-y-1.5">
-                  {users.map(u => (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {categories.map(c => (
                     <div
-                      key={u.id}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs"
+                      key={c.id}
+                      className="flex items-center justify-between p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-stone-800"
                     >
-                      <div>
-                        <strong className="text-stone-900">{u.username}</strong>{' '}
-                        <span className="text-stone-500">({u.role})</span>
-                      </div>
-                      <span className="text-[11px] font-mono bg-stone-200 px-2 py-0.5 rounded text-stone-700">
-                        Clave: {u.password}
-                      </span>
+                      {c.label}
+                      {c.id !== 'todos' && (
+                        <button
+                          onClick={() => {
+                            requestAuthorizedDelete(
+                              `Eliminar Categoría: ${c.label}`,
+                              'Los productos dentro de esta categoría no se borrarán, pero perderán su filtro. ¿Deseas continuar?',
+                              () => {
+                                setCategories(prev => prev.filter(cat => cat.id !== c.id));
+                                showNotification('Categoría eliminada.');
+                              }
+                            )
+                          }}
+                          className="text-red-500 hover:bg-red-100 p-1.5 rounded-lg transition"
+                          title="Eliminar categoría"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-amber-600" /> Seguridad y Cambio de Clave ({currentUser.username})
+                </h2>
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    if (
+                      !passwordChangeForm.newPassword ||
+                      passwordChangeForm.newPassword !== passwordChangeForm.confirmPassword
+                    ) {
+                      showNotification('Las contraseñas no coinciden.', 'error');
+                      return;
+                    }
+                    setUsers(prev =>
+                      prev.map(u =>
+                        u.id === currentUser.id
+                          ? { ...u, password: passwordChangeForm.newPassword }
+                          : u
+                      )
+                    );
+                    setPasswordChangeForm({ newPassword: '', confirmPassword: '' });
+                    showNotification(`Contraseña de ${currentUser.username} actualizada.`);
+                  }}
+                  className="space-y-3"
+                >
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Nueva Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordChangeForm.newPassword}
+                      onChange={e =>
+                        setPasswordChangeForm({ ...passwordChangeForm, newPassword: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Confirmar Nueva Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordChangeForm.confirmPassword}
+                      onChange={e =>
+                        setPasswordChangeForm({
+                          ...passwordChangeForm,
+                          confirmPassword: e.target.value
+                        })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs"
+                  >
+                    Actualizar Mi Contraseña
+                  </button>
+                </form>
+
+                <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-red-700 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4" /> Clave Especial para Autorizar Eliminaciones
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-lg bg-red-50 text-red-800 border border-red-200 text-[11px] font-black">
+                      Actual: {securityDeletePin}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500">
+                    Esta clave se solicita cada vez que alguien intenta eliminar productos del menú, rutas de delivery, facturas, gastos o clientes.
+                  </p>
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      if (!newDeletePinInput.trim()) return;
+                      setSecurityDeletePin(newDeletePinInput.trim());
+                      setNewDeletePinInput('');
+                      showNotification('Clave especial de eliminación actualizada correctamente.');
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={newDeletePinInput}
+                      onChange={e => setNewDeletePinInput(e.target.value)}
+                      placeholder="Nueva clave especial (Ej: 2026)"
+                      className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs"
+                    >
+                      Cambiar Clave
+                    </button>
+                  </form>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-stone-200 space-y-3">
+                  <h3 className="text-sm font-black text-stone-900 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-amber-600" /> Usuarios Registrados en el Sistema ({users.length})
+                  </h3>
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      if (!newUserForm.username.trim() || !newUserForm.password.trim()) {
+                        showNotification('Completa el nombre de usuario y contraseña.', 'error');
+                        return;
+                      }
+                      const createdUser = {
+                        id: `usr_${Date.now()}`,
+                        username: newUserForm.username.trim(),
+                        password: newUserForm.password.trim(),
+                        role: newUserForm.role || 'Operador de Ventas'
+                      };
+                      setUsers(prev => {
+                        const updated = [...prev, createdUser];
+                        persistToCloud({ users: updated });
+                        return updated;
+                      });
+                      setNewUserForm({ username: '', password: '', role: 'Operador de Ventas' });
+                      showNotification(`Usuario "${createdUser.username}" guardado permanentemente.`);
+                    }}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={newUserForm.username}
+                      onChange={e => setNewUserForm({ ...newUserForm, username: e.target.value })}
+                      placeholder="Nuevo Usuario"
+                      className="px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                    />
+                    <input
+                      type="text"
+                      value={newUserForm.password}
+                      onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                      placeholder="Contraseña"
+                      className="px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-2 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs"
+                    >
+                      + Agregar Usuario
+                    </button>
+                  </form>
+
+                  <div className="space-y-1.5">
+                    {users.map(u => (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs"
+                      >
+                        <div>
+                          <strong className="text-stone-900">{u.username}</strong>{' '}
+                          <span className="text-stone-500">({u.role})</span>
+                        </div>
+                        <span className="text-[11px] font-mono bg-stone-200 px-2 py-0.5 rounded text-stone-700">
+                          Clave: {u.password}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Tipos de Pago Configurables */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
-              <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-amber-600" /> Métodos de Pago Aceptados
-              </h2>
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  if (!newPaymentMethodName.trim()) return;
-                  setPaymentMethods(prev => [
-                    ...prev,
-                    {
-                      id: `pm_${Date.now()}`,
-                      name: newPaymentMethodName.trim(),
-                      requiresReference: true
-                    }
-                  ]);
-                  setNewPaymentMethodName('');
-                  showNotification('Nuevo método de pago agregado.');
-                }}
-                className="flex gap-2"
-              >
-                <input
-                  type="text"
-                  value={newPaymentMethodName}
-                  onChange={e => setNewPaymentMethodName(e.target.value)}
-                  placeholder="Ej: Zinli, PayPal, Punto de Venta..."
-                  className="flex-1 px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs"
+            {/* Columna Derecha: Cuentas Internas y Métodos de Pago a Clientes */}
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-6">
+              
+              {/* Cuentas Propias */}
+              <div>
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2 mb-2">
+                  <Landmark className="w-5 h-5 text-emerald-600" /> Cuentas Receptoras Internas
+                </h2>
+                <p className="text-[10px] text-stone-500 mb-3">
+                  Registra aquí las cuentas propias o cajas donde tú recibes el dinero. Las seleccionarás en el POS para cuadrar tus cajas.
+                </p>
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    if (!newReceivingAccountName.trim()) return;
+                    setReceivingAccounts(prev => [
+                      ...prev,
+                      { id: `acc_${Date.now()}`, name: newReceivingAccountName.trim() }
+                    ]);
+                    setNewReceivingAccountName('');
+                    showNotification('Cuenta receptora agregada exitosamente.');
+                  }}
+                  className="flex gap-2 mb-3"
                 >
-                  + Agregar
-                </button>
-              </form>
-              <div className="space-y-2">
-                {paymentMethods.map(pm => (
-                  <div
-                    key={pm.id}
-                    className="px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-bold text-stone-800"
+                  <input
+                    type="text"
+                    value={newReceivingAccountName}
+                    onChange={e => setNewReceivingAccountName(e.target.value)}
+                    placeholder="Ej: Banco Banesco Empresa, Caja Fuerte, etc."
+                    className="flex-1 px-3 py-2 rounded-xl border border-emerald-300 text-xs bg-emerald-50/30 text-stone-900 outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-stone-900 text-white font-extrabold text-xs transition hover:bg-stone-800"
                   >
-                    {pm.name}
-                  </div>
-                ))}
+                    + Añadir
+                  </button>
+                </form>
+
+                <div className="space-y-2">
+                  {receivingAccounts.map(acc => (
+                    <div
+                      key={acc.id}
+                      className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs font-bold text-emerald-900"
+                    >
+                      {acc.name}
+                      <button
+                        onClick={() => {
+                          requestAuthorizedDelete(
+                            `Eliminar Cuenta: ${acc.name}`,
+                            '¿Seguro que deseas eliminar esta cuenta receptora?',
+                            () => {
+                              setReceivingAccounts(prev => prev.filter(x => x.id !== acc.id));
+                              showNotification('Cuenta eliminada.');
+                            }
+                          );
+                        }}
+                        className="text-red-500 hover:bg-red-100 p-1.5 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Métodos de pago compartidos con el Cliente */}
+              <div className="border-t border-stone-200 pt-5">
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2 mb-2">
+                  <CreditCard className="w-5 h-5 text-amber-600" /> Métodos de Pago a Clientes
+                </h2>
+                <p className="text-[10px] text-stone-500 mb-3">
+                  Agrega los métodos y detalles (teléfono, cédula, correo) que se enviarán a los clientes automáticamente al compartirles el menú por WhatsApp.
+                </p>
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    if (!newPaymentMethodForm.name.trim()) return;
+                    setPaymentMethods(prev => [
+                      ...prev,
+                      {
+                        id: `pm_${Date.now()}`,
+                        name: newPaymentMethodForm.name.trim(),
+                        details: newPaymentMethodForm.details.trim(),
+                        requiresReference: true
+                      }
+                    ]);
+                    setNewPaymentMethodForm({ name: '', details: '' });
+                    showNotification('Nuevo método de pago para clientes agregado.');
+                  }}
+                  className="space-y-3 mb-4"
+                >
+                  <input
+                    type="text"
+                    value={newPaymentMethodForm.name}
+                    onChange={e => setNewPaymentMethodForm({ ...newPaymentMethodForm, name: e.target.value })}
+                    placeholder="Nombre (Ej: Pago Móvil BDV)"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900 outline-none"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={newPaymentMethodForm.details}
+                    onChange={e => setNewPaymentMethodForm({ ...newPaymentMethodForm, details: e.target.value })}
+                    placeholder="Detalles (Ej: 0414-000000 / V-123456 / Banco de Venezuela)"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900 outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs transition hover:bg-stone-800"
+                  >
+                    + Agregar Método al Menú
+                  </button>
+                </form>
+                
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {paymentMethods.map(pm => (
+                    <div
+                      key={pm.id}
+                      className="px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs flex justify-between items-center"
+                    >
+                      <div>
+                        <strong className="block text-stone-900 text-[11px] mb-0.5">{pm.name}</strong>
+                        <span className="text-[10px] text-stone-500 font-medium">{pm.details || 'Sin datos adicionales'}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          requestAuthorizedDelete(
+                            `Eliminar Método de Pago`,
+                            `¿Borrar "${pm.name}" de las opciones para clientes?`,
+                            () => {
+                              setPaymentMethods(prev => prev.filter(x => x.id !== pm.id));
+                              showNotification('Método eliminado.');
+                            }
+                          );
+                        }}
+                        className="text-red-500 hover:bg-red-100 p-1.5 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -5107,7 +4386,7 @@ export default function App() {
                   onClick={handleCopyDigitalMenuLink}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow"
                 >
-                  <Copy className="w-4 h-4" /> Copiar Enlace y Catálogo para Redes / WhatsApp
+                  <Copy className="w-4 h-4" /> Copiar Enlace y Cuentas para Redes / WhatsApp
                 </button>
               </div>
 
@@ -5137,6 +4416,61 @@ export default function App() {
                 className="w-full py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 border border-stone-300 font-extrabold text-xs flex items-center justify-center gap-2 transition"
               >
                 <ExternalLink className="w-4 h-4 text-amber-600" /> Abrir Vista Previa del Menú Digital
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* MODAL DE REVISIÓN ANTES DE CONFIRMAR LA FACTURA */}
+      {/* ========================================== */}
+      {previewInvoice && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
+            <h3 className="font-black text-lg text-center text-stone-900 border-b border-stone-200 pb-2">
+              Verificar y Aprobar Venta
+            </h3>
+            
+            <div className="text-xs space-y-2 bg-stone-50 p-4 rounded-xl border border-stone-200">
+              <div className="flex justify-between">
+                <span className="text-stone-500">Cliente:</span>
+                <span className="font-bold text-stone-900">{previewInvoice.customerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Ruta Asignada:</span>
+                <span className="font-bold text-stone-900 max-w-[150px] text-right">{previewInvoice.deliveryZoneName} (${previewInvoice.deliveryFee.toFixed(2)})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Método de Pago:</span>
+                <span className="font-bold text-stone-900">{previewInvoice.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Cuenta Receptora:</span>
+                <span className="font-bold text-emerald-700">{previewInvoice.receivingAccountName}</span>
+              </div>
+              <div className="pt-2 mt-2 border-t border-stone-200 font-black text-base flex justify-between items-center">
+                <span>Total a Cobrar:</span> 
+                <span className="text-amber-600">${previewInvoice.total.toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <p className="text-[10px] text-center text-stone-400">Verifica que los montos, cuenta y método de pago coincidan antes de descontar del inventario.</p>
+
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => setPreviewInvoice(null)}
+                className="p-3 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-xl text-xs transition"
+              >
+                Volver a Modificar
+              </button>
+              <button
+                type="button"
+                onClick={confirmCheckout}
+                className="p-3 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl text-xs transition"
+              >
+                Aprobar y Emitir
               </button>
             </div>
           </div>
@@ -5206,185 +4540,6 @@ export default function App() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* MODAL DE NUEVO CLIENTE RÁPIDO */}
-      {/* ========================================== */}
-      {showQuickCustomerModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-base font-black text-stone-900">
-              Registrar Nuevo Cliente Delivery
-            </h3>
-            <form onSubmit={handleSaveCustomer} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Nombre y Apellido *"
-                value={newCustomerForm.name}
-                onChange={e => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                required
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Cédula / RIF"
-                  value={newCustomerForm.document}
-                  onChange={e =>
-                    setNewCustomerForm({ ...newCustomerForm, document: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                />
-                <input
-                  type="text"
-                  placeholder="Teléfono WhatsApp *"
-                  value={newCustomerForm.phone}
-                  onChange={e => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                />
-              </div>
-              <textarea
-                rows={2}
-                placeholder="Dirección exacta de envío (Urbanización, calle, casa, referencia) *"
-                value={newCustomerForm.address}
-                onChange={e => setNewCustomerForm({ ...newCustomerForm, address: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                required
-              />
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-black text-xs"
-                >
-                  Guardar Cliente
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowQuickCustomerModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* MODAL DE FACTURA DE VENTA / COMANDA DELIVERY */}
-      {/* ========================================== */}
-      {lastInvoiceModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
-            <div className="text-center border-b border-dashed border-stone-300 pb-3">
-              <div className="text-2xl">🌭</div>
-              <h3 className="text-lg font-black text-stone-900">EL PUNTO DEL SABOR</h3>
-              <p className="text-xs font-bold text-stone-500">
-                Factura Delivery: {lastInvoiceModal.invoiceNumber} • Tel: {businessWhatsApp}
-              </p>
-              <p className="text-[11px] text-stone-400">
-                Fecha: {lastInvoiceModal.date} | Cajero: {lastInvoiceModal.cashier}
-              </p>
-            </div>
-
-            <div className="text-xs space-y-1 bg-stone-50 p-3 rounded-2xl border border-stone-200">
-              <div>
-                <strong>Cliente:</strong> {lastInvoiceModal.customerName} (
-                {lastInvoiceModal.customerPhone})
-              </div>
-              <div>
-                <strong>📍 Dirección de Envío:</strong> {lastInvoiceModal.deliveryAddress}
-              </div>
-              <div>
-                <strong>🛵 Ruta:</strong> {lastInvoiceModal.deliveryZoneName} ($
-                {Number(lastInvoiceModal.deliveryFee).toFixed(2)})
-              </div>
-              <div>
-                <strong>💳 Pago:</strong> {lastInvoiceModal.paymentMethod} (
-                {lastInvoiceModal.paymentCondition.toUpperCase()})
-              </div>
-              <div>
-                <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
-              </div>
-              <div>
-                <strong>👤 Nombre Emisor:</strong>{' '}
-                {lastInvoiceModal.paymentDetails?.senderName ||
-                  lastInvoiceModal.paymentDetails?.sender}
-              </div>
-              <div>
-                <strong>🪪 Cédula Emisor:</strong>{' '}
-                {lastInvoiceModal.paymentDetails?.senderDocument || 'N/A'} |{' '}
-                <strong>🏦 Banco:</strong> {lastInvoiceModal.paymentDetails?.senderBank || 'N/A'}
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
-              {lastInvoiceModal.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span>
-                    {item.qty}x {item.name}
-                  </span>
-                  <span className="font-bold">${item.subtotal.toFixed(2)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-stone-500 pt-1">
-                <span>Servicio Delivery:</span>
-                <span>${Number(lastInvoiceModal.deliveryFee).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm font-black text-stone-900 pt-1">
-                <span>TOTAL FACTURA:</span>
-                <span>
-                  ${lastInvoiceModal.total.toFixed(2)} (Bs.{' '}
-                  {Number(lastInvoiceModal.totalBs).toFixed(2)})
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 print:hidden">
-              <button
-                type="button"
-                onClick={() => {
-                  const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
-                    .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${lastInvoiceModal.deliveryFee.toFixed(
-                    2
-                  )}\n*TOTAL: $${lastInvoiceModal.total.toFixed(2)} (Bs. ${Number(
-                    lastInvoiceModal.totalBs
-                  ).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${
-                    lastInvoiceModal.paymentDetails?.reference
-                  }\nEmisor: ${
-                    lastInvoiceModal.paymentDetails?.senderName ||
-                    lastInvoiceModal.paymentDetails?.sender
-                  } | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${
-                    lastInvoiceModal.paymentDetails?.senderBank || 'S/N'
-                  }`;
-                  copyTextToClipboard(text);
-                }}
-                className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow"
-              >
-                {copiedWhatsApp ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedWhatsApp ? '¡Copiado al Portapapeles!' : 'Copiar para WhatsApp'}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDownloadInvoicePDF(lastInvoiceModal)}
-                className="py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1 shadow"
-              >
-                <Printer className="w-4 h-4" /> Descargar Factura PDF
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setLastInvoiceModal(null)}
-              className="w-full py-2 rounded-xl bg-stone-200 text-stone-800 font-bold text-xs print:hidden"
-            >
-              Cerrar Factura
-            </button>
           </div>
         </div>
       )}
