@@ -2860,7 +2860,10 @@ export default function App() {
   }
 
   // Ventas filtradas para el Cierre Diario
-  const dailyClosingSales = sales.filter(s => s.date === closingDate);
+  const dailyClosingSales = sales.filter(s => 
+    s.date === closingDate && 
+    (closingFilter === 'todas' || s.paymentCondition === closingFilter)
+  );
   const dailyProductSummary = {};
   dailyClosingSales.forEach(s => {
     s.items.forEach(item => {
