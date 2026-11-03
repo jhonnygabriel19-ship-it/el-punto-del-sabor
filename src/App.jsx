@@ -114,7 +114,6 @@ const createFoodSvgDataUri = (emoji, title, bgFrom = '#f59e0b', bgTo = '#ea580c'
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
-// Fotografías reales verificadas por categoría como respaldo primario
 const FALLBACK_BY_CATEGORY = {
   perros: 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=700&q=80',
   combos: 'https://images.unsplash.com/photo-1541214113241-21578d2d9b62?auto=format&fit=crop&w=700&q=80',
@@ -157,20 +156,9 @@ const VENEZUELAN_BANKS = [
 // ==========================================
 // DATOS INICIALES PRE-CARGADOS ("EL PUNTO DEL SABOR")
 // ==========================================
-
 const INITIAL_USERS = [
-  {
-    id: 'usr_1',
-    username: 'Michelle Sifontes',
-    password: '21237816',
-    role: 'Socia Administradora'
-  },
-  {
-    id: 'usr_2',
-    username: 'Jhonny Rivas',
-    password: '19749698',
-    role: 'Socio Administrador'
-  }
+  { id: 'usr_1', username: 'Michelle Sifontes', password: '21237816', role: 'Socia Administradora' },
+  { id: 'usr_2', username: 'Jhonny Rivas', password: '19749698', role: 'Socio Administrador' }
 ];
 
 const INITIAL_PRODUCTS = [
@@ -488,24 +476,8 @@ const INITIAL_SALES = [
     deliveryZoneName: 'Casco Central / Urbanizaciones Medias (3 a 5 km)',
     deliveryFee: 2.00,
     items: [
-      {
-        productId: 'prod_combo_2',
-        name: 'Combo 2: 2 Perros Especiales + Refresco',
-        category: 'combos',
-        qty: 2,
-        price: 5.80,
-        cost: 2.60,
-        subtotal: 11.60
-      },
-      {
-        productId: 'prod_perro_3',
-        name: 'Perro Polaco / Jumbo Supremo',
-        category: 'perros',
-        qty: 1,
-        price: 3.50,
-        cost: 1.55,
-        subtotal: 3.50
-      }
+      { productId: 'prod_combo_2', name: 'Combo 2: 2 Perros Especiales + Refresco', category: 'combos', qty: 2, price: 5.80, cost: 2.60, subtotal: 11.60 },
+      { productId: 'prod_perro_3', name: 'Perro Polaco / Jumbo Supremo', category: 'perros', qty: 1, price: 3.50, cost: 1.55, subtotal: 3.50 }
     ],
     subtotal: 15.10,
     totalCost: 6.75,
@@ -540,15 +512,7 @@ const INITIAL_SALES = [
     deliveryZoneName: 'Zona Cercana (Hasta 2 km)',
     deliveryFee: 1.00,
     items: [
-      {
-        productId: 'prod_combo_1',
-        name: 'Combo 1: 2 Perros Clásicos + Refresco',
-        category: 'combos',
-        qty: 2,
-        price: 4.20,
-        cost: 1.85,
-        subtotal: 8.40
-      }
+      { productId: 'prod_combo_1', name: 'Combo 1: 2 Perros Clásicos + Refresco', category: 'combos', qty: 2, price: 4.20, cost: 1.85, subtotal: 8.40 }
     ],
     subtotal: 8.40,
     totalCost: 3.70,
@@ -571,8 +535,8 @@ const INITIAL_SALES = [
   }
 ];
 
-const CATEGORIES = [
-  { id: 'todos', label: 'Todos' },
+const DEFAULT_CATEGORIES = [
+  { id: 'todos', label: 'Todos', isFixed: true },
   { id: 'perros', label: '🌭 Perros Calientes' },
   { id: 'combos', label: '🥤 Combos con Refresco' },
   { id: 'hamburguesas', label: '🍔 Hamburguesas' },
@@ -580,6 +544,22 @@ const CATEGORIES = [
   { id: 'especialidades', label: '🧀 Tequeños y Tenders' },
   { id: 'postres', label: '🍨 Postres y Helados' },
   { id: 'refrescos', label: '🧊 Bebidas y Refrescos' }
+];
+
+const DEFAULT_PAYMENT_RECEIVERS = [
+  {
+    id: 'pr_1',
+    type: 'pago_movil',
+    holder: 'Michelle Sifontes',
+    bank: '0102 - Banco de Venezuela (BDV)',
+    phone: '0424-9043122',
+    document: 'V-21237816',
+    account: '',
+    binanceId: '',
+    email: '',
+    isActive: true,
+    showToCustomers: true
+  }
 ];
 
 const STAGES_INFO = [
@@ -600,10 +580,112 @@ function loadFromStorage(key, fallback) {
   }
 }
 
+// ==========================================
+// SANEAMIENTO DE DATOS (evita pantallas negras por registros incompletos)
+// ==========================================
+function sanitizeProduct(p) {
+  if (!p || typeof p !== 'object') return null;
+  const rawCat = typeof p.category === 'string' && p.category ? p.category : 'perros';
+  return {
+    id: p.id || `prod_${Math.random().toString(36).slice(2, 9)}`,
+    name: typeof p.name === 'string' && p.name.trim() ? p.name : 'Producto sin nombre',
+    description: typeof p.description === 'string' ? p.description : '',
+    category: rawCat,
+    stage: Number(p.stage) || 1,
+    price: Number(p.price) || 0,
+    cost: Number(p.cost) || 0,
+    stock: Number(p.stock) || 0,
+    minStock: Number(p.minStock) || 10,
+    active: p.active !== false,
+    image:
+      typeof p.image === 'string' && p.image
+        ? p.image
+        : FALLBACK_BY_CATEGORY[rawCat] || FALLBACK_BY_CATEGORY.perros
+  };
+}
+
+function sanitizeSale(s) {
+  if (!s || typeof s !== 'object') return null;
+  const items = Array.isArray(s.items)
+    ? s.items.map(i => ({
+        productId: i.productId || '',
+        name: typeof i.name === 'string' ? i.name : 'Producto',
+        category: typeof i.category === 'string' ? i.category : 'otros',
+        qty: Number(i.qty) || 0,
+        price: Number(i.price) || 0,
+        cost: Number(i.cost) || 0,
+        subtotal: Number(i.subtotal) || 0
+      }))
+    : [];
+  return {
+    ...s,
+    items,
+    customerName: typeof s.customerName === 'string' ? s.customerName : 'Cliente',
+    customerPhone: typeof s.customerPhone === 'string' ? s.customerPhone : '',
+    customerDocument: typeof s.customerDocument === 'string' ? s.customerDocument : '',
+    deliveryAddress: typeof s.deliveryAddress === 'string' ? s.deliveryAddress : '',
+    deliveryZoneName: typeof s.deliveryZoneName === 'string' ? s.deliveryZoneName : 'Delivery',
+    deliveryFee: Number(s.deliveryFee) || 0,
+    subtotal: Number(s.subtotal) || 0,
+    totalCost: Number(s.totalCost) || 0,
+    total: Number(s.total) || 0,
+    totalBs: Number(s.totalBs) || 0,
+    exchangeRateUsed: Number(s.exchangeRateUsed) || 0,
+    paymentCondition: s.paymentCondition === 'credito' ? 'credito' : 'contado',
+    paymentMethod: typeof s.paymentMethod === 'string' ? s.paymentMethod : 'N/A',
+    paymentDetails: s.paymentDetails && typeof s.paymentDetails === 'object' ? s.paymentDetails : {},
+    invoiceNumber: typeof s.invoiceNumber === 'string' ? s.invoiceNumber : 'EPDS-XXXX',
+    date: typeof s.date === 'string' ? s.date : new Date().toISOString().split('T')[0]
+  };
+}
+
+function sanitizeCustomer(c) {
+  if (!c || typeof c !== 'object') return null;
+  return {
+    id: c.id || `cli_${Math.random().toString(36).slice(2, 9)}`,
+    name: typeof c.name === 'string' && c.name.trim() ? c.name : 'Cliente',
+    document: typeof c.document === 'string' ? c.document : '',
+    phone: typeof c.phone === 'string' ? c.phone : '',
+    address: typeof c.address === 'string' ? c.address : '',
+    defaultZoneId: c.defaultZoneId || 'zone_1'
+  };
+}
+
+function sanitizeCategory(c) {
+  if (!c || typeof c !== 'object') return null;
+  return {
+    id: typeof c.id === 'string' && c.id ? c.id : `cat_${Math.random().toString(36).slice(2, 9)}`,
+    label: typeof c.label === 'string' && c.label.trim() ? c.label : 'Categoría',
+    isFixed: !!c.isFixed
+  };
+}
+
+function sanitizePaymentReceiver(r) {
+  if (!r || typeof r !== 'object') return null;
+  return {
+    id: r.id || `pr_${Math.random().toString(36).slice(2, 9)}`,
+    type: typeof r.type === 'string' && r.type ? r.type : 'pago_movil',
+    holder: typeof r.holder === 'string' ? r.holder : '',
+    bank: typeof r.bank === 'string' ? r.bank : '',
+    phone: typeof r.phone === 'string' ? r.phone : '',
+    document: typeof r.document === 'string' ? r.document : '',
+    account: typeof r.account === 'string' ? r.account : '',
+    binanceId: typeof r.binanceId === 'string' ? r.binanceId : '',
+    email: typeof r.email === 'string' ? r.email : '',
+    isActive: r.isActive !== false,
+    showToCustomers: r.showToCustomers !== false
+  };
+}
+
+function ensureCategories(list) {
+  const clean = (Array.isArray(list) ? list : []).map(sanitizeCategory).filter(Boolean);
+  if (!clean.some(c => c.id === 'todos')) {
+    clean.unshift({ id: 'todos', label: 'Todos', isFixed: true });
+  }
+  return clean.length > 0 ? clean : DEFAULT_CATEGORIES;
+}
+
 export default function App() {
-  // ==========================================
-  // ESTADOS PRINCIPALES Y PERSISTENCIA EN NUBE + LOCAL
-  // ==========================================
   const [fbUser, setFbUser] = useState(null);
   const [cloudReady, setCloudReady] = useState(false);
 
@@ -616,10 +698,7 @@ export default function App() {
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return (
-        params.get('vista') === 'menu' ||
-        window.location.hash.includes('menu-digital')
-      );
+      return params.get('vista') === 'menu' || window.location.hash.includes('menu-digital');
     } catch (e) {
       return false;
     }
@@ -670,7 +749,6 @@ export default function App() {
   const [deletePinAttempt, setDeletePinAttempt] = useState('');
   const [deletePinError, setDeletePinError] = useState('');
 
-  // NUEVO: Filtro de facturas (contado / crédito) y modal de cobro de factura a crédito
   const [invoiceFilterType, setInvoiceFilterType] = useState('all');
   const [creditPaymentModal, setCreditPaymentModal] = useState({
     isOpen: false,
@@ -688,6 +766,41 @@ export default function App() {
     notes: ''
   });
 
+  // ✅ FIX: Categorías saneadas y con "todos" garantizado
+  const [categories, setCategories] = useState(() =>
+    ensureCategories(loadFromStorage('epds_categories_v2', DEFAULT_CATEGORIES))
+  );
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ id: '', label: '' });
+
+  const [zoneSearchInput, setZoneSearchInput] = useState('');
+  const [showZoneSuggestions, setShowZoneSuggestions] = useState(false);
+
+  // ✅ FIX: Cuentas de pago saneadas
+  const [paymentReceivers, setPaymentReceivers] = useState(() => {
+    const saved = loadFromStorage('epds_payment_receivers_v2', DEFAULT_PAYMENT_RECEIVERS);
+    return (Array.isArray(saved) ? saved : DEFAULT_PAYMENT_RECEIVERS)
+      .map(sanitizePaymentReceiver)
+      .filter(Boolean);
+  });
+  const [showPaymentReceiverModal, setShowPaymentReceiverModal] = useState(false);
+  const [editingPaymentReceiver, setEditingPaymentReceiver] = useState(null);
+  const [paymentReceiverForm, setPaymentReceiverForm] = useState({
+    type: 'pago_movil',
+    holder: '',
+    bank: '',
+    phone: '',
+    document: '',
+    account: '',
+    binanceId: '',
+    email: '',
+    showToCustomers: true
+  });
+  const [showPaymentShareModal, setShowPaymentShareModal] = useState(false);
+  const [paymentShareSelections, setPaymentShareSelections] = useState({});
+
+  // ✅ FIX: Productos saneados
   const [products, setProducts] = useState(() => {
     const saved = loadFromStorage('epds_products_v2', INITIAL_PRODUCTS);
     const brokenOrOldUrls = [
@@ -696,20 +809,39 @@ export default function App() {
       'photo-1581636625402-29b2a704ef13',
       'data:image/svg+xml'
     ];
-    return saved.map(item => {
-      const freshDefault = INITIAL_PRODUCTS.find(p => p.id === item.id);
-      const needsRealPhotoUpgrade = brokenOrOldUrls.some(b => (item.image || '').includes(b));
-      if (needsRealPhotoUpgrade && freshDefault) {
-        return { ...item, image: freshDefault.image };
-      }
-      return item;
-    });
+    const rawList = Array.isArray(saved) ? saved : INITIAL_PRODUCTS;
+    return rawList
+      .map(item => {
+        if (!item) return null;
+        const freshDefault = INITIAL_PRODUCTS.find(p => p.id === item.id);
+        const needsRealPhotoUpgrade = brokenOrOldUrls.some(b => (item.image || '').includes(b));
+        let merged = item;
+        if (needsRealPhotoUpgrade && freshDefault) {
+          merged = { ...item, image: freshDefault.image };
+        }
+        return sanitizeProduct(merged);
+      })
+      .filter(Boolean);
   });
   const [deliveryZones, setDeliveryZones] = useState(() => loadFromStorage('epds_zones_v2', INITIAL_DELIVERY_ZONES));
   const [paymentMethods, setPaymentMethods] = useState(() => loadFromStorage('epds_pm_v2', INITIAL_PAYMENT_METHODS));
-  const [customers, setCustomers] = useState(() => loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS));
+
+  // ✅ FIX: Clientes saneados
+  const [customers, setCustomers] = useState(() => {
+    const saved = loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS);
+    return (Array.isArray(saved) ? saved : INITIAL_CUSTOMERS)
+      .map(sanitizeCustomer)
+      .filter(Boolean);
+  });
   const [expenses, setExpenses] = useState(() => loadFromStorage('epds_expenses_v2', INITIAL_EXPENSES));
-  const [sales, setSales] = useState(() => loadFromStorage('epds_sales_v2', INITIAL_SALES));
+
+  // ✅ FIX: Ventas saneadas
+  const [sales, setSales] = useState(() => {
+    const saved = loadFromStorage('epds_sales_v2', INITIAL_SALES);
+    return (Array.isArray(saved) ? saved : INITIAL_SALES)
+      .map(sanitizeSale)
+      .filter(Boolean);
+  });
 
   const [supplyCatalog, setSupplyCatalog] = useState(() =>
     loadFromStorage('epds_supply_catalog_v2', INITIAL_SUPPLY_CATALOG)
@@ -725,7 +857,7 @@ export default function App() {
   };
 
   // ==========================================
-  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
+  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE
   // ==========================================
   useEffect(() => {
     if (!auth) return;
@@ -743,9 +875,7 @@ export default function App() {
     };
     initAuth();
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (isMounted && u) {
-        setFbUser(u);
-      }
+      if (isMounted && u) setFbUser(u);
     });
     return () => {
       isMounted = false;
@@ -753,6 +883,7 @@ export default function App() {
     };
   }, []);
 
+  // ✅ FIX: onSnapshot con saneamiento de todos los datos
   useEffect(() => {
     if (!db || !fbUser) return;
     const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -761,17 +892,46 @@ export default function App() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
+
           if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
-          if (Array.isArray(data.products)) setProducts(data.products);
-          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
-          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
-          if (Array.isArray(data.customers)) setCustomers(data.customers);
+
+          if (Array.isArray(data.products)) {
+            const cleanProds = data.products.map(sanitizeProduct).filter(Boolean);
+            if (cleanProds.length > 0) setProducts(cleanProds);
+          }
+
+          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) {
+            setDeliveryZones(data.deliveryZones);
+          }
+          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) {
+            setPaymentMethods(data.paymentMethods);
+          }
+
+          if (Array.isArray(data.customers)) {
+            setCustomers(data.customers.map(sanitizeCustomer).filter(Boolean));
+          }
+          if (Array.isArray(data.sales)) {
+            setSales(data.sales.map(sanitizeSale).filter(Boolean));
+          }
+
           if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-          if (Array.isArray(data.sales)) setSales(data.sales);
-          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) setSupplyCatalog(data.supplyCatalog);
-          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
+          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) {
+            setSupplyCatalog(data.supplyCatalog);
+          }
+          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) {
+            setSupplierCatalog(data.supplierCatalog);
+          }
+
           if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
           if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
+
+          if (Array.isArray(data.categories)) {
+            setCategories(ensureCategories(data.categories));
+          }
+          if (Array.isArray(data.paymentReceivers)) {
+            setPaymentReceivers(data.paymentReceivers.map(sanitizePaymentReceiver).filter(Boolean));
+          }
+
           setCloudReady(true);
         } else {
           setDoc(
@@ -788,6 +948,8 @@ export default function App() {
               supplierCatalog,
               securityDeletePin,
               businessWhatsApp,
+              categories,
+              paymentReceivers,
               updatedAt: new Date().toISOString()
             },
             { merge: true }
@@ -809,10 +971,7 @@ export default function App() {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
       await setDoc(
         stateDocRef,
-        {
-          ...partialData,
-          updatedAt: new Date().toISOString()
-        },
+        { ...partialData, updatedAt: new Date().toISOString() },
         { merge: true }
       );
     } catch (e) {
@@ -873,6 +1032,18 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('epds_custom_public_url_v2', JSON.stringify(customPublicUrl)); } catch (e) {}
   }, [customPublicUrl]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_categories_v2', JSON.stringify(categories)); } catch (e) {}
+    if (cloudReady) persistToCloud({ categories });
+  }, [categories, cloudReady]);
+  useEffect(() => {
+    try { localStorage.setItem('epds_payment_receivers_v2', JSON.stringify(paymentReceivers)); } catch (e) {}
+    if (cloudReady) persistToCloud({ paymentReceivers });
+  }, [paymentReceivers, cloudReady]);
+  useEffect(() => {
+    const z = deliveryZones.find(z => z.id === selectedZoneId);
+    if (z) setZoneSearchInput(z.name);
+  }, [selectedZoneId, deliveryZones]);
 
   // ==========================================
   // ESTADOS DEL PUNTO DE VENTA (POS) Y FACTURACIÓN
@@ -885,6 +1056,7 @@ export default function App() {
   const [selectedZoneId, setSelectedZoneId] = useState('zone_2');
   const [paymentCondition, setPaymentCondition] = useState('contado');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Pago Móvil');
+  const [selectedReceiverId, setSelectedReceiverId] = useState('');
 
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentSenderName, setPaymentSenderName] = useState(INITIAL_CUSTOMERS[0].name);
@@ -896,6 +1068,7 @@ export default function App() {
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
+  const [pendingInvoiceReview, setPendingInvoiceReview] = useState(null);
 
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
@@ -956,21 +1129,14 @@ export default function App() {
 
   useEffect(() => {
     syncBCVExchangeRate(true);
-    const interval = setInterval(() => {
-      syncBCVExchangeRate(true);
-    }, 30 * 60 * 1000);
+    const interval = setInterval(() => syncBCVExchangeRate(true), 30 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   const requestAuthorizedDelete = (title, description, actionCallback) => {
     setDeletePinAttempt('');
     setDeletePinError('');
-    setDeleteModal({
-      isOpen: true,
-      title,
-      description,
-      onConfirm: actionCallback
-    });
+    setDeleteModal({ isOpen: true, title, description, onConfirm: actionCallback });
   };
 
   const handleConfirmProtectedDelete = (e) => {
@@ -979,9 +1145,7 @@ export default function App() {
       setDeletePinError('Clave especial de seguridad incorrecta. Operación cancelada.');
       return;
     }
-    if (typeof deleteModal.onConfirm === 'function') {
-      deleteModal.onConfirm();
-    }
+    if (typeof deleteModal.onConfirm === 'function') deleteModal.onConfirm();
     setDeleteModal({ isOpen: false, title: '', description: '', onConfirm: null });
     setDeletePinAttempt('');
     setDeletePinError('');
@@ -998,15 +1162,8 @@ export default function App() {
         if (editingProduct && editingProduct.id === prod.id) {
           setEditingProduct(null);
           setProductForm({
-            name: '',
-            category: 'perros',
-            stage: 1,
-            price: '',
-            cost: '',
-            stock: '',
-            minStock: 10,
-            description: '',
-            image: ''
+            name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
+            minStock: 10, description: '', image: ''
           });
         }
         showNotification(`Producto "${prod.name}" eliminado del menú.`);
@@ -1016,26 +1173,15 @@ export default function App() {
 
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    name: '',
-    document: '',
-    phone: '',
-    address: '',
-    defaultZoneId: 'zone_1'
+    name: '', document: '', phone: '', address: '', defaultZoneId: 'zone_1'
   });
 
   const [newZoneForm, setNewZoneForm] = useState({ name: '', fee: '' });
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
-    name: '',
-    category: 'perros',
-    stage: 1,
-    price: '',
-    cost: '',
-    stock: '',
-    minStock: 10,
-    description: '',
-    image: ''
+    name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
+    minStock: 10, description: '', image: ''
   });
 
   const [expenseForm, setExpenseForm] = useState({
@@ -1051,31 +1197,29 @@ export default function App() {
   const [showSupplySuggestions, setShowSupplySuggestions] = useState(false);
   const [showSupplierSuggestions, setShowSupplierSuggestions] = useState(false);
 
+  // ✅ FIX: matchingSupplies y matchingSuppliers seguros
   const matchingSupplies = useMemo(() => {
     const q = (expenseForm.category || '').trim().toLowerCase();
     if (!q) return supplyCatalog;
     return supplyCatalog.filter(
       item =>
-        item.name.toLowerCase().includes(q) ||
-        (item.defaultDescription || '').toLowerCase().includes(q)
+        (item?.name || '').toLowerCase().includes(q) ||
+        (item?.defaultDescription || '').toLowerCase().includes(q)
     );
   }, [supplyCatalog, expenseForm.category]);
 
   const matchingSuppliers = useMemo(() => {
     const q = (expenseForm.supplier || '').trim().toLowerCase();
     if (!q) return supplierCatalog;
-    return supplierCatalog.filter(sup => sup.toLowerCase().includes(q));
+    return supplierCatalog.filter(sup => (sup || '').toLowerCase().includes(q));
   }, [supplierCatalog, expenseForm.supplier]);
 
   const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
   const [passwordChangeForm, setPasswordChangeForm] = useState({
-    newPassword: '',
-    confirmPassword: ''
+    newPassword: '', confirmPassword: ''
   });
   const [newUserForm, setNewUserForm] = useState({
-    username: '',
-    password: '',
-    role: 'Operador de Ventas'
+    username: '', password: '', role: 'Operador de Ventas'
   });
   const [newPaymentMethodName, setNewPaymentMethodName] = useState('');
 
@@ -1084,9 +1228,7 @@ export default function App() {
     const found = customers.find(c => c.id === custId);
     if (found) {
       setCustomDeliveryAddress(found.address);
-      if (found.defaultZoneId) {
-        setSelectedZoneId(found.defaultZoneId);
-      }
+      if (found.defaultZoneId) setSelectedZoneId(found.defaultZoneId);
       setPaymentSenderName(found.name || '');
       setPaymentSenderDoc(found.document || '');
       setPaymentSenderPhone(found.phone || '');
@@ -1094,7 +1236,7 @@ export default function App() {
   };
 
   // ==========================================
-  // GENERADOR Y DESCARGA DIRECTA DE ARCHIVO .PDF CON MÁRGENES AJUSTADOS
+  // GENERADOR Y DESCARGA DE PDF
   // ==========================================
   const generateAndDownloadPDF = (title, subtitle, linesArray, filename = 'Documento.pdf') => {
     try {
@@ -1141,10 +1283,8 @@ export default function App() {
 
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
-
       ctx.fillStyle = '#1c1917';
       ctx.fillRect(0, 0, width, 120);
-
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 25px sans-serif';
       ctx.fillText('EL PUNTO DEL SABOR', marginX, 46);
@@ -1184,7 +1324,6 @@ export default function App() {
           ctx.strokeStyle = '#f59e0b';
           ctx.lineWidth = 1.5;
           ctx.strokeRect(marginX, y - 18, contentWidth, boxHeight);
-
           ctx.fillStyle = '#1c1917';
           ctx.font = 'bold 14px sans-serif';
           block.lines.forEach((txtLine, idx) => {
@@ -1224,18 +1363,14 @@ export default function App() {
       const pdfH = Math.round((height / width) * 595);
 
       addString('%PDF-1.4\n');
-
       startObj(1);
       addString('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-
       startObj(2);
       addString('<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
-
       startObj(3);
       addString(
         `<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im1 4 0 R >> >> /MediaBox [0 0 ${pdfW} ${pdfH}] /Contents 5 0 R >>\nendobj\n`
       );
-
       startObj(4);
       addString(
         `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegLength} >>\nstream\n`
@@ -1290,28 +1425,23 @@ export default function App() {
       { text: `Ruta Asignada: ${invoice.deliveryZoneName} ($${Number(invoice.deliveryFee).toFixed(2)})` },
       { type: 'divider' },
       { type: 'header', text: 'DATOS DEL PAGO Y EMISOR' },
-      { text: `Condición: ${invoice.paymentCondition.toUpperCase()}   |   Método: ${invoice.paymentMethod}`, bold: true },
+      { text: `Condición: ${(invoice.paymentCondition || 'contado').toUpperCase()}   |   Método: ${invoice.paymentMethod}`, bold: true },
       { text: `N° de Referencia: ${invoice.paymentDetails?.reference || 'N/A'}`, bold: true },
       { text: `Nombre del Emisor: ${invoice.paymentDetails?.senderName || invoice.paymentDetails?.sender || 'N/A'}` },
       { text: `Cédula / RIF Emisor: ${invoice.paymentDetails?.senderDocument || 'N/A'}` },
       { text: `Banco Emisor: ${invoice.paymentDetails?.senderBank || 'N/A'}   |   Tel: ${invoice.paymentDetails?.senderPhone || 'N/A'}` },
       { type: 'divider' },
       { type: 'header', text: 'DETALLE DE PRODUCTOS FACTURADOS' },
-      ...invoice.items.map(item => ({
-        text: `${item.qty}x ${item.name}  —  $${item.price.toFixed(2)} c/u  =  $${item.subtotal.toFixed(2)}`,
+      ...(Array.isArray(invoice.items) ? invoice.items : []).map(item => ({
+        text: `${item.qty}x ${item.name}  —  $${Number(item.price).toFixed(2)} c/u  =  $${Number(item.subtotal).toFixed(2)}`,
         bold: true
       })),
       { type: 'divider' },
       { text: `Subtotal Productos: $${Number(invoice.subtotal).toFixed(2)}` },
       { text: `Costo de Envío Delivery: $${Number(invoice.deliveryFee).toFixed(2)}` },
-      {
-        type: 'total',
-        text: `TOTAL FACTURA: $${Number(invoice.total).toFixed(2)} USD   (Bs. ${Number(invoice.totalBs).toFixed(2)})`
-      }
+      { type: 'total', text: `TOTAL FACTURA: $${Number(invoice.total).toFixed(2)} USD   (Bs. ${Number(invoice.totalBs).toFixed(2)})` }
     ];
-    if (invoice.notes) {
-      lines.push({ text: `Nota de entrega / cocina: ${invoice.notes}`, bold: true });
-    }
+    if (invoice.notes) lines.push({ text: `Nota de entrega / cocina: ${invoice.notes}`, bold: true });
     generateAndDownloadPDF(
       `Factura Delivery ${invoice.invoiceNumber}`,
       `Fecha: ${invoice.date} | Tasa aplicada: Bs. ${invoice.exchangeRateUsed}/$`,
@@ -1337,10 +1467,7 @@ export default function App() {
         text: `${s.invoiceNumber} | ${s.customerName} | ${s.paymentMethod} Ref: ${s.paymentDetails?.reference || 'N/A'} | $${s.total.toFixed(2)}`
       })),
       { type: 'divider' },
-      {
-        type: 'total',
-        text: `TOTAL PERCIBIDO EN EL DÍA: $${totalDayUSD.toFixed(2)} USD   (Bs. ${(totalDayUSD * exchangeRate).toFixed(2)})`
-      }
+      { type: 'total', text: `TOTAL PERCIBIDO EN EL DÍA: $${totalDayUSD.toFixed(2)} USD   (Bs. ${(totalDayUSD * exchangeRate).toFixed(2)})` }
     ];
     generateAndDownloadPDF(
       `Cierre de Ventas Diario - ${closingDate}`,
@@ -1367,8 +1494,7 @@ export default function App() {
       const origin = window.location.origin;
       const pathname = window.location.pathname || '/';
       if (
-        origin &&
-        origin !== 'null' &&
+        origin && origin !== 'null' &&
         !origin.includes('about:') &&
         !window.location.href.startsWith('about:')
       ) {
@@ -1385,12 +1511,7 @@ export default function App() {
       `¡Hola! Te compartimos nuestro menú actualizado con servicio Delivery.\n\n` +
       `📋 *Nuestros Productos Disponibles hoy:*\n` +
       availableCustomerProducts
-        .map(
-          p =>
-            `• *${p.name}*: $${Number(p.price).toFixed(2)} (Bs. ${(
-              Number(p.price) * exchangeRate
-            ).toFixed(2)})`
-        )
+        .map(p => `• *${p.name}*: $${Number(p.price).toFixed(2)} (Bs. ${(Number(p.price) * exchangeRate).toFixed(2)})`)
         .join('\n') +
       `\n\n🛵 *Tarifas Delivery:*\n` +
       deliveryZones.map(z => `• ${z.name}: $${Number(z.fee).toFixed(2)}`).join('\n') +
@@ -1398,7 +1519,6 @@ export default function App() {
       `📲 *Para ordenar responde este mensaje con:*\n1) Tu Pedido\n2) Nombre, Cédula y Teléfono\n3) Dirección exacta de envío\n4) Método de Pago y Referencia\n\n` +
       `🌐 *Enlace Web:* ${shareUrl}\n` +
       `📞 *WhatsApp Ventas:* ${businessWhatsApp}`;
-
     copyTextToClipboard(message);
     showNotification('¡Enlace y catálogo completo copiados para compartir en tus redes sociales y WhatsApp!');
   };
@@ -1406,48 +1526,26 @@ export default function App() {
   const handleDownloadCustomerMenuPDF = () => {
     const lines = [
       { type: 'header', text: 'CARTA / MENÚ DIGITAL DISPONIBLE PARA CLIENTES' },
-      {
-        text: `Pedidos a Domicilio (Delivery) • WhatsApp: ${businessWhatsApp} • Tasa BCV: Bs. ${Number(
-          exchangeRate
-        ).toFixed(2)}/$`,
-        bold: true
-      },
+      { text: `Pedidos a Domicilio (Delivery) • WhatsApp: ${businessWhatsApp} • Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`, bold: true },
       { type: 'divider' }
     ];
-
-    CATEGORIES.filter(c => c.id !== 'todos').forEach(cat => {
+    categories.filter(c => c.id !== 'todos').forEach(cat => {
       const catProds = availableCustomerProducts.filter(p => p.category === cat.id);
       if (catProds.length > 0) {
         lines.push({ type: 'header', text: cat.label.toUpperCase() });
         catProds.forEach(p => {
-          lines.push({
-            text: `• ${p.name}  —  $${Number(p.price).toFixed(2)}  (Bs. ${(
-              Number(p.price) * exchangeRate
-            ).toFixed(2)})`,
-            bold: true
-          });
-          if (p.description) {
-            lines.push({ text: `   ${p.description}` });
-          }
+          lines.push({ text: `• ${p.name}  —  $${Number(p.price).toFixed(2)}  (Bs. ${(Number(p.price) * exchangeRate).toFixed(2)})`, bold: true });
+          if (p.description) lines.push({ text: `   ${p.description}` });
         });
         lines.push({ type: 'divider' });
       }
     });
-
     lines.push({ type: 'header', text: 'TARIFAS DE ENVÍO DELIVERY POR RUTA' });
     deliveryZones.forEach(z => {
-      lines.push({
-        text: `• ${z.name}: $${Number(z.fee).toFixed(2)} (Bs. ${(
-          Number(z.fee) * exchangeRate
-        ).toFixed(2)})`
-      });
+      lines.push({ text: `• ${z.name}: $${Number(z.fee).toFixed(2)} (Bs. ${(Number(z.fee) * exchangeRate).toFixed(2)})` });
     });
     lines.push({ type: 'divider' });
-    lines.push({
-      type: 'total',
-      text: `PEDIDOS POR WHATSAPP: ${businessWhatsApp} • FORMAS DE PAGO: PAGO MÓVIL, BINANCE (USDT), EFECTIVO Y TRANSFERENCIA`
-    });
-
+    lines.push({ type: 'total', text: `PEDIDOS POR WHATSAPP: ${businessWhatsApp} • FORMAS DE PAGO: PAGO MÓVIL, BINANCE (USDT), EFECTIVO Y TRANSFERENCIA` });
     generateAndDownloadPDF(
       'MENÚ OFICIAL DE PRODUCTOS Y COMBOS',
       `Servicio Delivery • Pedidos al ${businessWhatsApp} • Precios en USD y Bolívares`,
@@ -1465,60 +1563,42 @@ export default function App() {
       const rowHeight = 90;
       const footerBoxHeight = 96;
       const height = Math.max(1080, 230 + items.length * rowHeight + footerBoxHeight + 50);
-
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-
       const grad = ctx.createLinearGradient(0, 0, 0, height);
       grad.addColorStop(0, '#1c1917');
       grad.addColorStop(1, '#292524');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
-
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, width, 155);
-
       ctx.fillStyle = '#1c1917';
       ctx.font = '900 38px sans-serif';
       ctx.fillText('🌭 EL PUNTO DEL SABOR', marginX, 62);
-
       ctx.font = 'bold 19px sans-serif';
       ctx.fillText('MENÚ DIGITAL DELIVERY • PERROS, COMBOS, BURGERS Y ESPECIALIDADES', marginX, 98);
-
       ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(
-        `📲 Pedidos WhatsApp: ${businessWhatsApp}   |   Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`,
-        marginX,
-        132
-      );
-
+      ctx.fillText(`📲 Pedidos WhatsApp: ${businessWhatsApp}   |   Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`, marginX, 132);
       let y = 195;
       const textMaxW = boxWidth - 210;
-
       items.forEach((p, idx) => {
         ctx.fillStyle = idx % 2 === 0 ? '#292524' : '#1f1c1a';
         ctx.fillRect(marginX, y - 34, boxWidth, 76);
-
         ctx.strokeStyle = '#44403c';
         ctx.lineWidth = 1;
         ctx.strokeRect(marginX, y - 34, boxWidth, 76);
-
         ctx.fillStyle = '#fbbf24';
         ctx.font = 'bold 19px sans-serif';
         const titleLines = wrapCanvasText(ctx, p.name, textMaxW);
         ctx.fillText(titleLines[0] || '', marginX + 18, y - 8);
-
         ctx.fillStyle = '#d6d3d1';
         ctx.font = '13px sans-serif';
         const descLines = wrapCanvasText(ctx, p.description || '', textMaxW);
         ctx.fillText(descLines[0] || '', marginX + 18, y + 14);
-        if (descLines[1]) {
-          ctx.fillText(descLines[1], marginX + 18, y + 31);
-        }
-
+        if (descLines[1]) ctx.fillText(descLines[1], marginX + 18, y + 31);
         const priceBoxW = 165;
         const priceBoxX = width - marginX - priceBoxW - 14;
         ctx.fillStyle = '#f59e0b';
@@ -1528,30 +1608,24 @@ export default function App() {
         ctx.fillText(`$${Number(p.price).toFixed(2)}`, priceBoxX + 14, y + 2);
         ctx.font = 'bold 13px sans-serif';
         ctx.fillText(`Bs. ${(Number(p.price) * exchangeRate).toFixed(2)}`, priceBoxX + 14, y + 22);
-
         y += rowHeight;
       });
-
       const footerY = height - footerBoxHeight - 25;
       ctx.fillStyle = '#292524';
       ctx.fillRect(marginX, footerY, boxWidth, footerBoxHeight);
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2;
       ctx.strokeRect(marginX, footerY, boxWidth, footerBoxHeight);
-
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 17px sans-serif';
       const footerLine1 = `🛵 ¡SERVICIO DELIVERY RÁPIDO! • PEDIDOS AL WHATSAPP: ${businessWhatsApp}`;
       const footerLine2 = `💳 FORMAS DE PAGO: PAGO MÓVIL • BINANCE (USDT) • EFECTIVO • TRANSFERENCIA`;
-
       const wrappedFooter1 = wrapCanvasText(ctx, footerLine1, boxWidth - 36);
       const wrappedFooter2 = wrapCanvasText(ctx, footerLine2, boxWidth - 36);
-
       ctx.fillText(wrappedFooter1[0] || '', marginX + 18, footerY + 36);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px sans-serif';
       ctx.fillText(wrappedFooter2[0] || '', marginX + 18, footerY + 68);
-
       const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -1565,16 +1639,17 @@ export default function App() {
     }
   };
 
+  // ✅ FIX: filteredProducts con safe-access
   const filteredProducts = useMemo(() => {
+    const q = (posSearch || '').trim().toLowerCase();
     return products.filter(p => {
       const matchesCategory = posCategory === 'todos' || p.category === posCategory;
       const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
-      const q = posSearch.trim().toLowerCase();
       const matchesSearch =
         !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q);
       return matchesCategory && matchesStage && matchesSearch;
     });
   }, [products, posCategory, activeStageFilter, posSearch]);
@@ -1621,20 +1696,11 @@ export default function App() {
     [deliveryZones, selectedZoneId]
   );
 
-  const cartSubtotal = useMemo(
-    () => cart.reduce((acc, item) => acc + item.subtotal, 0),
-    [cart]
-  );
-  const cartTotalCost = useMemo(
-    () => cart.reduce((acc, item) => acc + item.cost * item.qty, 0),
-    [cart]
-  );
+  const cartSubtotal = useMemo(() => cart.reduce((acc, item) => acc + item.subtotal, 0), [cart]);
+  const cartTotalCost = useMemo(() => cart.reduce((acc, item) => acc + item.cost * item.qty, 0), [cart]);
   const cartTotalUSD = cartSubtotal + Number(selectedZone.fee || 0);
   const cartTotalBs = cartTotalUSD * Number(exchangeRate || 1);
 
-  // ==========================================
-  // NUEVO: HELPERS DE CORRELATIVO, DÍAS PENDIENTES Y COBRO DE CRÉDITO
-  // ==========================================
   const getNextInvoiceNumber = (paymentCondition) => {
     if (paymentCondition === 'credito') {
       const creditNums = sales
@@ -1722,26 +1788,7 @@ export default function App() {
     setCreditPaymentModal(prev => ({ ...prev, isOpen: false, saleId: null }));
   };
 
-  const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
-    const paidAt = new Date().toISOString();
-    setSales(prev =>
-      prev.map(s =>
-        s.id === saleId
-          ? {
-              ...s,
-              creditPaid: true,
-              creditPaidDate: paidAt,
-              paymentMethod: `${method} (Crédito Liquidado)`,
-              paymentDetails: { ...s.paymentDetails, reference: ref, paidAt }
-            }
-          : s
-      )
-    );
-    showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
-  };
-
-  // Emitir Factura
-  const handleCheckout = () => {
+  const handlePrepareCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1762,13 +1809,14 @@ export default function App() {
       document: paymentSenderDoc || 'V-00000000'
     };
 
-    const formattedSenderSummary = [
-      paymentSenderName || customerObj.name,
-      paymentSenderDoc || customerObj.document,
-      paymentSenderBank
-    ]
+    const formattedSenderSummary = [paymentSenderName || customerObj.name, paymentSenderDoc || customerObj.document, paymentSenderBank]
       .filter(Boolean)
       .join(' | ');
+
+    const selectedReceiver = paymentReceivers.find(r => r.id === selectedReceiverId) || null;
+    const receiverSummary = selectedReceiver
+      ? `${selectedReceiver.holder} | ${selectedReceiver.bank || ''} ${selectedReceiver.phone || selectedReceiver.binanceId || selectedReceiver.email || ''}`.trim()
+      : null;
 
     const newInvoice = {
       id: `sale_${Date.now()}`,
@@ -1792,6 +1840,8 @@ export default function App() {
       paymentCondition,
       creditPaid: paymentCondition === 'contado',
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
+      receiver: selectedReceiver,
+      receiverSummary,
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
         senderName: paymentSenderName || customerObj.name,
@@ -1804,28 +1854,191 @@ export default function App() {
       notes: orderNotes
     };
 
+    setPendingInvoiceReview(newInvoice);
+  };
+
+  const handleApproveInvoice = () => {
+    if (!pendingInvoiceReview) return;
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = cart.find(i => i.productId === prod.id);
+        const soldItem = (pendingInvoiceReview.items || []).find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
     );
-
     setCustomers(prev =>
       prev.map(c =>
-        c.id === selectedCustomerId
-          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
+        c.id === pendingInvoiceReview.customerId
+          ? { ...c, address: pendingInvoiceReview.deliveryAddress, defaultZoneId: selectedZoneId }
           : c
       )
     );
-
-    setSales(prev => [newInvoice, ...prev]);
-    setLastInvoiceModal(newInvoice);
+    setSales(prev => [pendingInvoiceReview, ...prev]);
+    setLastInvoiceModal(pendingInvoiceReview);
+    setPendingInvoiceReview(null);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
+    showNotification(`Factura ${pendingInvoiceReview.invoiceNumber} registrada con éxito.`);
+  };
+
+  const handleImportBackupJSON = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (Array.isArray(data.products)) setProducts(data.products.map(sanitizeProduct).filter(Boolean));
+        if (Array.isArray(data.users)) setUsers(data.users);
+        if (Array.isArray(data.customers)) setCustomers(data.customers.map(sanitizeCustomer).filter(Boolean));
+        if (Array.isArray(data.sales)) setSales(data.sales.map(sanitizeSale).filter(Boolean));
+        if (Array.isArray(data.expenses)) setExpenses(data.expenses);
+        if (Array.isArray(data.deliveryZones)) setDeliveryZones(data.deliveryZones);
+        if (Array.isArray(data.paymentMethods)) setPaymentMethods(data.paymentMethods);
+        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(data.supplyCatalog);
+        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(data.supplierCatalog);
+        if (Array.isArray(data.categories)) setCategories(ensureCategories(data.categories));
+        if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers.map(sanitizePaymentReceiver).filter(Boolean));
+        if (typeof data.exchangeRate === 'number') setExchangeRate(data.exchangeRate);
+        showNotification('¡Respaldo restaurado correctamente!');
+      } catch (err) {
+        showNotification('Archivo inválido. Debe ser un respaldo .JSON válido.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleExportTableCSV = (filename, headers, rows) => {
+    const BOM = '\uFEFF';
+    const csvLines = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';'))
+    ];
+    const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification(`Archivo ${filename} descargado.`);
+  };
+
+  const handleSharePaymentData = () => {
+    const selected = paymentReceivers.filter(r => r.isActive !== false && paymentShareSelections[r.id]);
+    if (selected.length === 0) {
+      showNotification('Selecciona al menos una cuenta de pago para compartir.', 'error');
+      return;
+    }
+    const typeLabels = {
+      pago_movil: '📱 Pago Móvil',
+      transferencia: '🏦 Transferencia Bancaria',
+      binance: '🟡 Binance (USDT)',
+      zelle: '💜 Zelle',
+      efectivo: '💵 Efectivo'
+    };
+    const lines = [
+      `💳 *DATOS PARA REALIZAR TU PAGO*`,
+      `*EL PUNTO DEL SABOR* 🌭`,
+      '',
+      `A continuación nuestros datos para que puedas realizar tu pago:`,
+      ''
+    ];
+    selected.forEach((r, idx) => {
+      lines.push(`*${idx + 1}. ${typeLabels[r.type] || r.type}*`);
+      if (r.holder) lines.push(`• Titular: ${r.holder}`);
+      if (r.document) lines.push(`• C.I / RIF: ${r.document}`);
+      if (r.bank) lines.push(`• Banco: ${r.bank}`);
+      if (r.phone) lines.push(`• Teléfono: ${r.phone}`);
+      if (r.account) lines.push(`• Cuenta: ${r.account}`);
+      if (r.binanceId) lines.push(`• Binance Pay ID: ${r.binanceId}`);
+      if (r.email) lines.push(`• Email: ${r.email}`);
+      lines.push('');
+    });
+    lines.push(`💰 *Tasa BCV del día:* Bs. ${Number(exchangeRate).toFixed(2)}/$`);
+    lines.push(`📞 *WhatsApp Ventas:* ${businessWhatsApp}`);
+    lines.push('');
+    lines.push(`⚠️ *IMPORTANTE:* Después de pagar, envía el comprobante y el número de referencia por WhatsApp para confirmar tu pedido.`);
+    const message = lines.join('\n');
+    copyTextToClipboard(message);
+    const rawBizPhone = businessWhatsApp.replace(/[^0-9]/g, '');
+    const intlPhone = rawBizPhone.startsWith('0') ? `58${rawBizPhone.slice(1)}` : rawBizPhone;
+    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleSaveCategory = (e) => {
+    e.preventDefault();
+    if (!categoryForm.label.trim() || !categoryForm.id.trim()) {
+      showNotification('Completa el ID y el nombre de la categoría.', 'error');
+      return;
+    }
+    const cleanId = categoryForm.id.trim().toLowerCase().replace(/\s+/g, '_');
+    if (editingCategory) {
+      setCategories(prev =>
+        prev.map(c => (c.id === editingCategory.id ? { ...c, label: categoryForm.label.trim() } : c))
+      );
+      showNotification('Categoría actualizada.');
+    } else {
+      if (categories.some(c => c.id === cleanId)) {
+        showNotification('Ya existe una categoría con ese ID.', 'error');
+        return;
+      }
+      setCategories(prev => [...prev, { id: cleanId, label: categoryForm.label.trim() }]);
+      showNotification('Categoría agregada.');
+    }
+    setShowCategoryModal(false);
+    setEditingCategory(null);
+    setCategoryForm({ id: '', label: '' });
+  };
+
+  const handleDeleteCategory = (cat) => {
+    if (cat.isFixed) return;
+    requestAuthorizedDelete(
+      `Eliminar Categoría: ${cat.label}`,
+      `¿Eliminar la categoría "${cat.label}"? Los productos con esta categoría no se borrarán, pero dejarán de aparecer filtrados.`,
+      () => {
+        setCategories(prev => prev.filter(c => c.id !== cat.id));
+        showNotification('Categoría eliminada.');
+      }
+    );
+  };
+
+  const handleSavePaymentReceiver = (e) => {
+    e.preventDefault();
+    if (!paymentReceiverForm.holder.trim()) {
+      showNotification('Indica el titular de la cuenta.', 'error');
+      return;
+    }
+    const data = { ...paymentReceiverForm };
+    if (editingPaymentReceiver) {
+      setPaymentReceivers(prev =>
+        prev.map(r => (r.id === editingPaymentReceiver.id ? { ...r, ...data } : r))
+      );
+      showNotification('Cuenta de pago actualizada.');
+    } else {
+      setPaymentReceivers(prev => [...prev, { id: `pr_${Date.now()}`, ...data, isActive: true }]);
+      showNotification('Cuenta de pago agregada.');
+    }
+    setShowPaymentReceiverModal(false);
+    setEditingPaymentReceiver(null);
+    setPaymentReceiverForm({
+      type: 'pago_movil', holder: '', bank: '', phone: '', document: '',
+      account: '', binanceId: '', email: '', showToCustomers: true
+    });
+  };
+
+  const handleDeletePaymentReceiver = (r) => {
+    requestAuthorizedDelete(
+      `Eliminar Cuenta de Pago`,
+      `¿Eliminar la cuenta de ${r.holder} (${r.type})?`,
+      () => {
+        setPaymentReceivers(prev => prev.filter(item => item.id !== r.id));
+        showNotification('Cuenta de pago eliminada.');
+      }
+    );
   };
 
   const handleSaveCustomer = (e) => {
@@ -1849,13 +2062,7 @@ export default function App() {
     setPaymentSenderName(created.name);
     setPaymentSenderDoc(created.document);
     setPaymentSenderPhone(created.phone);
-    setNewCustomerForm({
-      name: '',
-      document: '',
-      phone: '',
-      address: '',
-      defaultZoneId: 'zone_1'
-    });
+    setNewCustomerForm({ name: '', document: '', phone: '', address: '', defaultZoneId: 'zone_1' });
     setShowQuickCustomerModal(false);
     showNotification(`Cliente "${created.name}" registrado y seleccionado.`);
   };
@@ -1908,9 +2115,7 @@ export default function App() {
       showNotification('Completa el nombre y el precio del producto.', 'error');
       return;
     }
-    const fallbackImg =
-      FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
-
+    const fallbackImg = FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
     if (editingProduct) {
       setProducts(prev =>
         prev.map(p =>
@@ -1948,18 +2153,10 @@ export default function App() {
       setProducts(prev => [newProd, ...prev]);
       showNotification(`Producto "${newProd.name}" agregado al menú.`);
     }
-
     setEditingProduct(null);
     setProductForm({
-      name: '',
-      category: 'perros',
-      stage: 1,
-      price: '',
-      cost: '',
-      stock: '',
-      minStock: 10,
-      description: '',
-      image: ''
+      name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
+      minStock: 10, description: '', image: ''
     });
   };
 
@@ -1975,10 +2172,7 @@ export default function App() {
   };
 
   const handleSelectSupplierFromMemory = (supplierName) => {
-    setExpenseForm(prev => ({
-      ...prev,
-      supplier: supplierName
-    }));
+    setExpenseForm(prev => ({ ...prev, supplier: supplierName }));
     setShowSupplierSuggestions(false);
   };
 
@@ -1991,7 +2185,6 @@ export default function App() {
     const cleanCategory = expenseForm.category.trim();
     const cleanSupplier = expenseForm.supplier.trim() || 'Proveedor General';
     const cleanDesc = expenseForm.description.trim() || cleanCategory;
-
     const exp = {
       id: `exp_${Date.now()}`,
       date: expenseForm.date,
@@ -2003,76 +2196,57 @@ export default function App() {
       expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 0),
       consumedPercent: Number(expenseForm.consumedPercent || 0)
     };
-
     setSupplyCatalog(prev => {
       const exists = prev.some(i => i.name.toLowerCase() === cleanCategory.toLowerCase());
       if (exists) return prev;
       return [
-        {
-          name: cleanCategory,
-          type: expenseForm.type,
-          expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 100),
-          defaultDescription: cleanDesc
-        },
+        { name: cleanCategory, type: expenseForm.type, expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 100), defaultDescription: cleanDesc },
         ...prev
       ];
     });
-
     setSupplierCatalog(prev => {
       const exists = prev.some(s => s.toLowerCase() === cleanSupplier.toLowerCase());
       if (exists) return prev;
       return [cleanSupplier, ...prev];
     });
-
     setExpenses(prev => [exp, ...prev]);
     setExpenseForm({
       date: new Date().toISOString().split('T')[0],
-      type: 'insumo',
-      category: '',
-      description: '',
-      amount: '',
-      supplier: '',
-      expectedYieldUnits: 100,
-      consumedPercent: 20
+      type: 'insumo', category: '', description: '', amount: '', supplier: '',
+      expectedYieldUnits: 100, consumedPercent: 20
     });
     showNotification(`Compra de "${cleanCategory}" en "${cleanSupplier}" guardada en memoria.`);
   };
 
+  // ✅ FIX: kpiMetrics con items garantizado
   const kpiMetrics = useMemo(() => {
     const totalSalesRevenue = sales.reduce((acc, s) => acc + Number(s.total || 0), 0);
     const totalFoodRevenue = sales.reduce((acc, s) => acc + Number(s.subtotal || 0), 0);
     const totalDeliveryRevenue = sales.reduce((acc, s) => acc + Number(s.deliveryFee || 0), 0);
     const totalRecipeCost = sales.reduce((acc, s) => acc + Number(s.totalCost || 0), 0);
-
     const cashCollected = sales
       .filter(s => s.paymentCondition === 'contado' || s.creditPaid)
       .reduce((acc, s) => acc + Number(s.total || 0), 0);
-
     const pendingCredit = sales
       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
       .reduce((acc, s) => acc + Number(s.total || 0), 0);
-
     const totalInsumosExpenses = expenses
       .filter(e => e.type === 'insumo' || e.type === 'operativo')
       .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-
     const totalInitialInvestment = expenses
       .filter(e => e.type === 'inversion')
       .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-
     const grossProfit = totalFoodRevenue - totalRecipeCost;
     const grossMarginPct = totalFoodRevenue > 0 ? (grossProfit / totalFoodRevenue) * 100 : 0;
     const netOperatingBalance = totalSalesRevenue - totalInsumosExpenses;
-    const roiProgressPct =
-      totalInitialInvestment > 0 ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100)) : 100;
-
+    const roiProgressPct = totalInitialInvestment > 0
+      ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100))
+      : 100;
     const totalUnitsSold = sales.reduce(
-      (acc, s) => acc + s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0),
+      (acc, s) => acc + (Array.isArray(s.items) ? s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0) : 0),
       0
     );
-
     const alarms = [];
-
     products.forEach(p => {
       if (Number(p.stock) <= Number(p.minStock)) {
         alarms.push({
@@ -2083,7 +2257,6 @@ export default function App() {
         });
       }
     });
-
     expenses
       .filter(e => e.type === 'insumo' && Number(e.expectedYieldUnits) > 0)
       .forEach(e => {
@@ -2097,7 +2270,6 @@ export default function App() {
           });
         }
       });
-
     products.forEach(p => {
       const margin = ((p.price - p.cost) / p.price) * 100;
       if (margin < 45) {
@@ -2109,7 +2281,6 @@ export default function App() {
         });
       }
     });
-
     if (pendingCredit > 0) {
       alarms.push({
         id: 'alm_credit_pending',
@@ -2118,22 +2289,11 @@ export default function App() {
         detail: `Tienes $${pendingCredit.toFixed(2)} pendientes por cobrar de facturas a crédito.`
       });
     }
-
     return {
-      totalSalesRevenue,
-      totalFoodRevenue,
-      totalDeliveryRevenue,
-      totalRecipeCost,
-      cashCollected,
-      pendingCredit,
-      totalInsumosExpenses,
-      totalInitialInvestment,
-      grossProfit,
-      grossMarginPct,
-      netOperatingBalance,
-      roiProgressPct,
-      totalUnitsSold,
-      alarms
+      totalSalesRevenue, totalFoodRevenue, totalDeliveryRevenue, totalRecipeCost,
+      cashCollected, pendingCredit, totalInsumosExpenses, totalInitialInvestment,
+      grossProfit, grossMarginPct, netOperatingBalance, roiProgressPct,
+      totalUnitsSold, alarms
     };
   }, [sales, expenses, products]);
 
@@ -2141,9 +2301,7 @@ export default function App() {
     const BOM = '\uFEFF';
     const csvLines = [
       headers.join(';'),
-      ...rows.map(row =>
-        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
-      )
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';'))
     ];
     const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -2160,16 +2318,8 @@ export default function App() {
     const backup = {
       businessName: 'El Punto del Sabor',
       exportedAt: new Date().toISOString(),
-      exchangeRate,
-      users,
-      products,
-      deliveryZones,
-      paymentMethods,
-      customers,
-      expenses,
-      sales,
-      supplyCatalog,
-      supplierCatalog
+      exchangeRate, users, products, deliveryZones, paymentMethods, customers,
+      expenses, sales, supplyCatalog, supplierCatalog, categories, paymentReceivers
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -2206,11 +2356,12 @@ export default function App() {
     }
   };
 
+  // ✅ FIX: handleLogin con safe-access
   const handleLogin = (e) => {
     e.preventDefault();
     const found = users.find(
       u =>
-        u.username.toLowerCase() === loginUsername.trim().toLowerCase() &&
+        (u.username || '').toLowerCase() === loginUsername.trim().toLowerCase() &&
         u.password === loginPassword
     );
     if (!found) {
@@ -2237,15 +2388,7 @@ export default function App() {
       deliveryZoneName: 'Zona Cercana (Hasta 2 km)',
       deliveryFee: 1.0,
       items: [
-        {
-          productId: 'prod_combo_1',
-          name: 'Combo 1: 2 Perros Clásicos + Refresco',
-          category: 'combos',
-          qty: 1,
-          price: 4.2,
-          cost: 1.85,
-          subtotal: 4.2
-        }
+        { productId: 'prod_combo_1', name: 'Combo 1: 2 Perros Clásicos + Refresco', category: 'combos', qty: 1, price: 4.2, cost: 1.85, subtotal: 4.2 }
       ],
       subtotal: 4.2,
       totalCost: 1.85,
@@ -2270,12 +2413,13 @@ export default function App() {
   };
 
   if (isCustomerPublicView) {
+    // ✅ FIX: búsqueda segura en la vista pública
     const publicProducts = availableCustomerProducts.filter(p => {
       const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
-      const q = customerSearch.trim().toLowerCase();
+      const q = (customerSearch || '').trim().toLowerCase();
       const matchQ =
         !q ||
-        p.name.toLowerCase().includes(q) ||
+        (p.name || '').toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q);
       return matchCat && matchQ;
     });
@@ -2337,9 +2481,10 @@ export default function App() {
       const cleanAddr = customerOrderForm.address.trim();
 
       setCustomers(prev => {
+        // ✅ FIX: comparación segura con datos de cliente
         const exists = prev.some(
           c =>
-            c.name.toLowerCase() === cleanName.toLowerCase() ||
+            (c.name || '').toLowerCase() === cleanName.toLowerCase() ||
             (cleanPhone && c.phone === cleanPhone)
         );
         if (exists) return prev;
@@ -2461,7 +2606,7 @@ export default function App() {
                 />
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                {CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
@@ -2762,6 +2907,31 @@ export default function App() {
                 </div>
               </div>
 
+              {paymentReceivers.filter(r => r.isActive !== false && r.showToCustomers).length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-700/50 space-y-2">
+                  <div className="text-[11px] font-black text-emerald-400 uppercase">
+                    💳 Cuentas para enviar tu pago:
+                  </div>
+                  {paymentReceivers
+                    .filter(r => r.isActive !== false && r.showToCustomers)
+                    .map(r => (
+                      <div key={r.id} className="p-2 rounded-xl bg-stone-950/60 text-xs text-stone-200 border border-stone-800">
+                        <div className="font-bold text-emerald-300">
+                          {(r.type || '').replace('_', ' ').toUpperCase()} — {r.holder}
+                        </div>
+                        <div className="text-[10px] text-stone-400 mt-0.5">
+                          {r.document && <>{r.document} • </>}
+                          {r.bank && <>{r.bank} • </>}
+                          {r.phone && <>{r.phone} • </>}
+                          {r.account && <>Cta: {r.account} • </>}
+                          {r.binanceId && <>Binance: {r.binanceId} • </>}
+                          {r.email && <>{r.email}</>}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
               <button
                 type="button"
                 disabled={customerCart.length === 0}
@@ -2859,17 +3029,29 @@ export default function App() {
     );
   }
 
+  // ==========================================
+  // CÁLCULOS DEL CIERRE DIARIO (con items seguros)
+  // ==========================================
   const dailyClosingSales = sales.filter(s => s.date === closingDate);
   const dailyProductSummary = {};
   dailyClosingSales.forEach(s => {
-    s.items.forEach(item => {
-      if (!dailyProductSummary[item.name]) {
-        dailyProductSummary[item.name] = { qty: 0, totalUSD: 0, category: item.category };
+    (Array.isArray(s.items) ? s.items : []).forEach(item => {
+      const key = item?.name || 'Producto';
+      if (!dailyProductSummary[key]) {
+        dailyProductSummary[key] = {
+          qty: 0,
+          totalUSD: 0,
+          category: item?.category || 'otros'
+        };
       }
-      dailyProductSummary[item.name].qty += item.qty;
-      dailyProductSummary[item.name].totalUSD += item.subtotal;
+      dailyProductSummary[key].qty += Number(item?.qty) || 0;
+      dailyProductSummary[key].totalUSD += Number(item?.subtotal) || 0;
     });
   });
+
+  const filteredZoneSuggestions = deliveryZones.filter(z =>
+    z.name.toLowerCase().includes(zoneSearchInput.trim().toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col [&_*]:scrollbar-thin [&_*]:scrollbar-thumb-stone-300 [&_*]:scrollbar-track-transparent">
@@ -2949,6 +3131,14 @@ export default function App() {
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Menú Clientes (Descargar / Enlace)</span>
+            </button>
+
+            <button
+              onClick={() => setShowPaymentShareModal(true)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 shadow transition"
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Compartir Cuentas Pago</span>
             </button>
 
             <button
@@ -3033,7 +3223,7 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => setPosCategory(cat.id)}
@@ -3178,21 +3368,47 @@ export default function App() {
                     />
                   </div>
 
-                  <div>
+                  <div className="relative">
                     <label className="block text-[11px] font-bold text-stone-700 mb-1">
                       🛵 Ruta de Domicilio / Tarifa de Envío:
                     </label>
-                    <select
-                      value={selectedZoneId}
-                      onChange={e => setSelectedZoneId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900"
-                    >
-                      {deliveryZones.map(z => (
-                        <option key={z.id} value={z.id}>
-                          {z.name} — ${Number(z.fee).toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={zoneSearchInput}
+                      onChange={e => {
+                        setZoneSearchInput(e.target.value);
+                        setShowZoneSuggestions(true);
+                      }}
+                      onFocus={() => setShowZoneSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowZoneSuggestions(false), 200)}
+                      placeholder="Escribe para filtrar la ruta..."
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    {showZoneSuggestions && (
+                      <div className="absolute z-30 mt-1 w-full bg-white rounded-xl shadow-xl border border-amber-400 max-h-52 overflow-y-auto divide-y divide-stone-100">
+                        {filteredZoneSuggestions.length === 0 ? (
+                          <div className="p-3 text-xs text-stone-500">
+                            Sin coincidencias.
+                          </div>
+                        ) : (
+                          filteredZoneSuggestions.map(z => (
+                            <button
+                              key={z.id}
+                              type="button"
+                              onMouseDown={() => {
+                                setSelectedZoneId(z.id);
+                                setZoneSearchInput(z.name);
+                                setShowZoneSuggestions(false);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-amber-50 text-xs font-bold text-stone-800 flex justify-between"
+                            >
+                              <span>{z.name}</span>
+                              <span className="text-amber-700">${Number(z.fee).toFixed(2)}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3300,6 +3516,26 @@ export default function App() {
                             className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
                           />
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                          💼 Cuenta que RECIBE el pago:
+                        </label>
+                        <select
+                          value={selectedReceiverId}
+                          onChange={e => setSelectedReceiverId(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                        >
+                          <option value="">-- Sin especificar --</option>
+                          {paymentReceivers
+                            .filter(r => r.isActive !== false)
+                            .map(r => (
+                              <option key={r.id} value={r.id}>
+                                {r.holder} • {(r.type || '').replace('_', ' ')} • {r.bank || r.binanceId || r.email || ''}
+                              </option>
+                            ))}
+                        </select>
                       </div>
 
                       <div className="pt-1 border-t border-stone-200">
@@ -3464,10 +3700,10 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={handleCheckout}
+                  onClick={handlePrepareCheckout}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-stone-950 font-black text-sm shadow-lg transition flex items-center justify-center gap-2"
                 >
-                  <Printer className="w-4 h-4" /> Emitir Factura y Registrar Venta
+                  <Printer className="w-4 h-4" /> Revisar y Emitir Factura
                 </button>
               </div>
             </div>
@@ -3507,7 +3743,7 @@ export default function App() {
                       onChange={e => setProductForm({ ...productForm, category: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
                     >
-                      {CATEGORIES.filter(c => c.id !== 'todos').map(c => (
+                      {categories.filter(c => c.id !== 'todos').map(c => (
                         <option key={c.id} value={c.id}>
                           {c.label}
                         </option>
@@ -3651,15 +3887,8 @@ export default function App() {
                         onClick={() => {
                           setEditingProduct(null);
                           setProductForm({
-                            name: '',
-                            category: 'perros',
-                            stage: 1,
-                            price: '',
-                            cost: '',
-                            stock: '',
-                            minStock: 10,
-                            description: '',
-                            image: ''
+                            name: '', category: 'perros', stage: 1, price: '', cost: '',
+                            stock: '', minStock: 10, description: '', image: ''
                           });
                         }}
                         className="px-3 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
@@ -4460,15 +4689,8 @@ export default function App() {
                     exportToExcelCSV(
                       `Cierre_Ventas_${closingDate}.csv`,
                       [
-                        'Factura',
-                        'Fecha',
-                        'Cliente',
-                        'Direccion',
-                        'Condicion',
-                        'Metodo Pago',
-                        'Referencia',
-                        'Total USD',
-                        'Total Bs'
+                        'Factura', 'Fecha', 'Cliente', 'Direccion', 'Condicion',
+                        'Metodo Pago', 'Referencia', 'Total USD', 'Total Bs'
                       ],
                       dailyClosingSales.map(s => [
                         s.invoiceNumber,
@@ -4554,7 +4776,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* FILTRO DE FACTURAS: CONTADO / CRÉDITO */}
                 <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-stone-200">
                   <span className="text-[11px] font-bold text-stone-500 mr-1">Filtrar por tipo:</span>
                   <button
@@ -5080,6 +5301,188 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-amber-600" /> Categorías del Menú
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingCategory(null);
+                    setCategoryForm({ id: '', label: '' });
+                    setShowCategoryModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-stone-900 text-amber-400 text-xs font-extrabold"
+                >
+                  + Nueva Categoría
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                {categories.map(cat => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs"
+                  >
+                    <div>
+                      <strong className="text-stone-900">{cat.label}</strong>
+                      <span className="text-stone-500 ml-2 font-mono text-[10px]">({cat.id})</span>
+                      {cat.isFixed && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold">
+                          Fija
+                        </span>
+                      )}
+                    </div>
+                    {!cat.isFixed && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setCategoryForm({ id: cat.id, label: cat.label });
+                            setShowCategoryModal(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4 md:col-span-2">
+              <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                <Download className="w-5 h-5 text-amber-600" /> Respaldos y Exportación
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                  <h3 className="font-black text-xs text-amber-900 uppercase">📤 Exportar todo</h3>
+                  <p className="text-[11px] text-stone-600">Descarga la base completa en JSON para respaldar.</p>
+                  <button
+                    type="button"
+                    onClick={handleExportFullBackupJSON}
+                    className="w-full py-2.5 rounded-xl bg-stone-900 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> Descargar Respaldo (.JSON)
+                  </button>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                  <h3 className="font-black text-xs text-emerald-900 uppercase">📥 Importar respaldo</h3>
+                  <p className="text-[11px] text-stone-600">Restaura tu base desde un archivo .JSON previamente descargado.</p>
+                  <label className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer">
+                    <Upload className="w-4 h-4" /> Subir Respaldo (.JSON)
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleImportBackupJSON}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                <h3 className="font-black text-xs text-stone-900 uppercase">📊 Descargar cada tabla en Excel (CSV)</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Productos_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Categoria', 'Etapa', 'PVP USD', 'Costo USD', 'Stock', 'MinStock', 'Descripcion'],
+                        products.map(p => [p.id, p.name, p.category, p.stage, p.price, p.cost, p.stock, p.minStock, p.description])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Utensils className="w-3.5 h-3.5" /> Productos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Ventas_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['Factura', 'Fecha', 'Cliente', 'Cedula', 'Telefono', 'Direccion', 'Ruta', 'Condicion', 'Metodo', 'Referencia', 'Estado', 'Subtotal', 'Envio', 'Total USD', 'Total Bs'],
+                        sales.map(s => [
+                          s.invoiceNumber, s.date, s.customerName, s.customerDocument, s.customerPhone,
+                          s.deliveryAddress, s.deliveryZoneName, s.paymentCondition, s.paymentMethod,
+                          s.paymentDetails?.reference || '', s.creditPaid ? 'Pagada' : 'Pendiente',
+                          s.subtotal, s.deliveryFee, s.total, s.totalBs
+                        ])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Ventas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Clientes_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Cedula', 'Telefono', 'Direccion', 'RutaDefault'],
+                        customers.map(c => [c.id, c.name, c.document, c.phone, c.address, c.defaultZoneId])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Users className="w-3.5 h-3.5" /> Clientes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Gastos_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['Fecha', 'Tipo', 'Categoria', 'Descripcion', 'Monto USD', 'Proveedor', 'Rendimiento', 'Consumido %'],
+                        expenses.map(e => [e.date, e.type, e.category, e.description, e.amount, e.supplier, e.expectedYieldUnits, e.consumedPercent])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Package className="w-3.5 h-3.5" /> Gastos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Rutas_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Tarifa USD'],
+                        deliveryZones.map(z => [z.id, z.name, z.fee])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Truck className="w-3.5 h-3.5" /> Rutas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleExportTableCSV(
+                        `Categorias_${new Date().toISOString().split('T')[0]}.csv`,
+                        ['ID', 'Nombre', 'Fija'],
+                        categories.map(c => [c.id, c.label, c.isFixed ? 'SI' : 'NO'])
+                      )
+                    }
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-800 font-bold text-[11px] flex items-center gap-1.5"
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Categorías
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -5243,7 +5646,6 @@ export default function App() {
         </div>
       )}
 
-      {/* NUEVO MODAL: COBRO DE FACTURA A CRÉDITO */}
       {creditPaymentModal.isOpen && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[90vh] overflow-y-auto">
@@ -5450,6 +5852,225 @@ export default function App() {
         </div>
       )}
 
+      {pendingInvoiceReview && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[92vh] overflow-y-auto">
+            <div className="text-center border-b border-dashed border-stone-300 pb-3">
+              <div className="text-2xl">🧾</div>
+              <h3 className="text-lg font-black text-stone-900">REVISAR FACTURA ANTES DE EMITIR</h3>
+              <p className="text-xs font-bold text-amber-700">
+                {pendingInvoiceReview.invoiceNumber} — {(pendingInvoiceReview.paymentCondition || 'contado').toUpperCase()}
+              </p>
+              <p className="text-[11px] text-stone-500">
+                Verifica todos los datos y aprueba o regresa para modificar
+              </p>
+            </div>
+
+            <div className="text-xs space-y-1 bg-stone-50 p-3 rounded-2xl border border-stone-200">
+              <div><strong>Cliente:</strong> {pendingInvoiceReview.customerName} ({pendingInvoiceReview.customerPhone})</div>
+              <div><strong>📍 Dirección:</strong> {pendingInvoiceReview.deliveryAddress}</div>
+              <div><strong>🛵 Ruta:</strong> {pendingInvoiceReview.deliveryZoneName} (${Number(pendingInvoiceReview.deliveryFee).toFixed(2)})</div>
+              <div><strong>💳 Pago:</strong> {pendingInvoiceReview.paymentMethod} ({(pendingInvoiceReview.paymentCondition || 'contado').toUpperCase()})</div>
+              <div><strong>🔢 Ref:</strong> {pendingInvoiceReview.paymentDetails?.reference}</div>
+              {pendingInvoiceReview.receiverSummary && (
+                <div className="text-emerald-800 font-bold">
+                  <strong>💼 Recibe el pago:</strong> {pendingInvoiceReview.receiverSummary}
+                </div>
+              )}
+              {pendingInvoiceReview.notes && (
+                <div><strong>📝 Nota:</strong> {pendingInvoiceReview.notes}</div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
+              {(Array.isArray(pendingInvoiceReview.items) ? pendingInvoiceReview.items : []).map((item, idx) => (
+                <div key={idx} className="flex justify-between">
+                  <span>{item.qty}x {item.name}</span>
+                  <span className="font-bold">${item.subtotal.toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between text-stone-500 pt-1">
+                <span>Servicio Delivery:</span>
+                <span>${Number(pendingInvoiceReview.deliveryFee).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base font-black text-stone-900 pt-2 border-t border-stone-300">
+                <span>TOTAL:</span>
+                <span>
+                  ${pendingInvoiceReview.total.toFixed(2)} <span className="text-xs">(Bs. {Number(pendingInvoiceReview.totalBs).toFixed(2)})</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleApproveInvoice}
+                className="py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Factura
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingInvoiceReview(null)}
+                className="py-3 rounded-2xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-black text-sm flex items-center justify-center gap-2"
+              >
+                ← Volver y Modificar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
+            <h3 className="text-base font-black text-stone-900">
+              {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+            </h3>
+            <form onSubmit={handleSaveCategory} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">ID interno (sin espacios) *</label>
+                <input
+                  type="text"
+                  value={categoryForm.id}
+                  onChange={e => setCategoryForm({ ...categoryForm, id: e.target.value })}
+                  placeholder="Ej: sushi, tacos, alitas"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                  disabled={!!editingCategory}
+                  required
+                />
+                <p className="text-[10px] text-stone-500 mt-1">Solo letras minúsculas, números y guiones bajos.</p>
+              </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Nombre visible (con emoji si quieres) *</label>
+                <input
+                  type="text"
+                  value={categoryForm.label}
+                  onChange={e => setCategoryForm({ ...categoryForm, label: e.target.value })}
+                  placeholder="Ej: 🍣 Sushi y Rolls"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                  required
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-black text-xs">
+                  {editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCategoryModal(false);
+                    setEditingCategory(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPaymentShareModal && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-emerald-500 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-stone-900">Compartir Cuentas de Pago</h3>
+                  <p className="text-xs text-stone-500">
+                    Selecciona las cuentas que quieres enviar al cliente por WhatsApp.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaymentShareModal(false)}
+                className="text-stone-400 hover:text-stone-700 font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {paymentReceivers.filter(r => r.isActive !== false).map(r => (
+                <label
+                  key={r.id}
+                  className={`flex items-start gap-2 p-3 rounded-2xl border cursor-pointer transition ${
+                    paymentShareSelections[r.id]
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : 'bg-stone-50 border-stone-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!paymentShareSelections[r.id]}
+                    onChange={e =>
+                      setPaymentShareSelections(prev => ({ ...prev, [r.id]: e.target.checked }))
+                    }
+                    className="w-4 h-4 accent-emerald-600 mt-0.5"
+                  />
+                  <div className="flex-1">
+                    <div className="font-black text-xs text-stone-900">
+                      {r.holder} — <span className="text-emerald-700 uppercase">{(r.type || '').replace('_', ' ')}</span>
+                    </div>
+                    <div className="text-[11px] text-stone-600 mt-0.5">
+                      {r.document && <>C.I: {r.document} • </>}
+                      {r.bank && <>{r.bank} • </>}
+                      {r.phone && <>Tel: {r.phone} • </>}
+                      {r.account && <>Cta: {r.account} • </>}
+                      {r.binanceId && <>Binance: {r.binanceId} • </>}
+                      {r.email && <>Email: {r.email}</>}
+                    </div>
+                  </div>
+                </label>
+              ))}
+              {paymentReceivers.filter(r => r.isActive !== false).length === 0 && (
+                <div className="p-4 text-center text-xs text-stone-500 bg-stone-50 rounded-xl">
+                  No hay cuentas de pago. Agrégalas en la pestaña <em>Usuarios y Tipos de Pago</em>.
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const all = {};
+                  paymentReceivers.filter(r => r.isActive !== false).forEach(r => { all[r.id] = true; });
+                  setPaymentShareSelections(all);
+                }}
+                className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold"
+              >
+                Seleccionar Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentShareSelections({})}
+                className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSharePaymentData();
+                setShowPaymentShareModal(false);
+              }}
+              className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+            >
+              <Smartphone className="w-4 h-4" /> Copiar y Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      )}
+
       {showQuickCustomerModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
@@ -5539,7 +6160,7 @@ export default function App() {
               </div>
               <div>
                 <strong>💳 Pago:</strong> {lastInvoiceModal.paymentMethod} (
-                {lastInvoiceModal.paymentCondition.toUpperCase()})
+                {(lastInvoiceModal.paymentCondition || 'contado').toUpperCase()})
               </div>
               <div>
                 <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
@@ -5557,7 +6178,7 @@ export default function App() {
             </div>
 
             <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
-              {lastInvoiceModal.items.map((item, idx) => (
+              {(Array.isArray(lastInvoiceModal.items) ? lastInvoiceModal.items : []).map((item, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span>
                     {item.qty}x {item.name}
@@ -5582,9 +6203,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
+                  const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${(Array.isArray(lastInvoiceModal.items) ? lastInvoiceModal.items : [])
                     .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${lastInvoiceModal.deliveryFee.toFixed(
+                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee).toFixed(
                     2
                   )}\n*TOTAL: $${lastInvoiceModal.total.toFixed(2)} (Bs. ${Number(
                     lastInvoiceModal.totalBs
