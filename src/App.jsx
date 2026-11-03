@@ -608,7 +608,7 @@ export default function App() {
   const [cloudReady, setCloudReady] = useState(false);
 
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
-  const [currentUser, setCurrentUser] = useState(() => INITIAL_USERS[0]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
   const [loginPassword, setLoginPassword] = useState('21237816');
   const [loginError, setLoginError] = useState('');
@@ -2429,20 +2429,15 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadCustomerMenuPDF}
-                className="px-3 py-2 rounded-xl bg-stone-950 hover:bg-stone-800 text-amber-400 text-xs font-extrabold flex items-center gap-1.5 shadow"
-              >
-                <FileDown className="w-4 h-4" /> Descargar Menú PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCustomerPublicView(false)}
-                className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 text-xs font-black shadow"
-              >
-                ← Volver al Panel Administrativo
-              </button>
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomerPublicView(false)}
+                  className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 text-xs font-black shadow"
+                >
+                  ← Volver al Panel Administrativo
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -2803,7 +2798,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setLoginUsername(u.username);
-                      setLoginPassword(u.password);
+                      setLoginPassword('');
                       setLoginError('');
                     }}
                     className={`p-2.5 rounded-xl border text-left transition ${
@@ -2813,7 +2808,7 @@ export default function App() {
                     }`}
                   >
                     <div className="text-xs font-extrabold">{u.username}</div>
-                    <div className="text-[10px] text-stone-500">Clave: {u.password}</div>
+                    <div className="text-[10px] text-stone-500">{u.role}</div>
                   </button>
                 ))}
               </div>
