@@ -63,19 +63,18 @@ let db = null;
 let auth = null;
 try {
   const firebaseConfig = {
-    apiKey: "AIzaSyDKyi-0uuIY4fjDwkZ83xicc4ArTdGF6Gk",
+    apiKey: "AIzaSyDKyi-0uuIY4fjDwKZ83xicc4ArTdGF6Gk",
     authDomain: "el-punto-del-sabor-45b3d.firebaseapp.com",
     projectId: "el-punto-del-sabor-45b3d",
-    storageBucket: "el-punto-del-sabor-45b3d.firebasestorage.app",
+    storageBucket: "el-punto-del-sabor-45b3d.appspot.com", // OJO: Cámbialo a .appspot.com (el tuyo decía firebasestorage.app)
     messagingSenderId: "501069850002",
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
-  
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
-  console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
+  console.warn('Usando almacenamiento local de respaldo:', err);
 }
 
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
@@ -735,13 +734,38 @@ export default function App() {
   // ==========================================
 // Escuchar cambios desde la base de datos en la nube para no perder ningún registro
 useEffect(() => {
-  if (!db || !fbUser) return;
-  const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
-  const unsub = onSnapshot(
-    stateDocRef,
-    (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
+  if (!auth) return;
+  let isMounted = true;
+  
+  const initAuth = async () => {
+    try {
+      // Si estamos en un entorno que inyecta token (como la IA) lo usa, si no, usa anónimo
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.error('Error de autenticación en nube:', e);
+      // ESTO ES CLAVE PARA QUE VEAS EL ERROR
+      showNotification('Error de conexión Firebase: Activa "Anónimo" en Authentication', 'error');
+    }
+  };
+  
+  initAuth();
+
+  const unsub = onAuthStateChanged(auth, (u) => {
+    if (isMounted) {
+      setFbUser(u);
+      if (!u) console.warn("No hay usuario de Firebase autenticado");
+    }
+  });
+  
+  return () => {
+    isMounted = false;
+    unsub();
+  };
+}, []);
         
         // 🛑 FRENO AL BUCLE INFINITO: Solo actualiza si la nube tiene datos realmente distintos
         if (Array.isArray(data.users)) setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
