@@ -168,7 +168,7 @@ const INITIAL_USERS = [
   {
     id: 'usr_1',
     username: 'Michelle Sifontes',
-    password: '21237816',
+    password: '21497110',
     role: 'Socia Administradora'
   },
   {
