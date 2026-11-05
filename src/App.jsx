@@ -70,11 +70,12 @@ try {
     messagingSenderId: "501069850002",
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
+  
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
-  console.warn('Usando almacenamiento local de respaldo:', err);
+  console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
 }
 
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
