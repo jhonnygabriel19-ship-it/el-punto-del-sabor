@@ -769,7 +769,7 @@ useEffect(() => {
   return () => unsub();
 }, [fbUser]);
 
-  const persistToCloud = async (partialData) => {
+    const persistToCloud = async (partialData) => {
     if (!db || !fbUser) return;
     try {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -782,7 +782,8 @@ useEffect(() => {
         { merge: true }
       );
     } catch (e) {
-      console.warn('No se pudo sincronizar cambio en la nube:', e);
+      console.error('No se pudo sincronizar cambio en la nube:', e);
+      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
     }
   };
 
