@@ -58,20 +58,25 @@ import {
 // ==========================================
 // INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
 // ==========================================
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDKyi-0uuIY4fjDwkZ83xicc4ArTdGF6Gk",
-  authDomain: "el-punto-del-sabor-45b3d.firebaseapp.com",
-  projectId: "el-punto-del-sabor-45b3d",
-  storageBucket: "el-punto-del-sabor-45b3d.firebasestorage.app",
-  messagingSenderId: "501069850002",
-  appId: "1:501069850002:web:ee740ed897148e870e8d4b"
-};
+const appId = 'el-punto-del-sabor-app';
+let db = null;
+let auth = null;
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDKyi-0uuIY4fjDwkZ83xicc4ArTdGF6Gk",
+    authDomain: "el-punto-del-sabor-45b3d.firebaseapp.com",
+    projectId: "el-punto-del-sabor-45b3d",
+    storageBucket: "el-punto-del-sabor-45b3d.firebasestorage.app",
+    messagingSenderId: "501069850002",
+    appId: "1:501069850002:web:ee740ed897148e870e8d4b"
+  };
+  const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  db = getFirestore(firebaseApp);
+  auth = getAuth(firebaseApp);
+} catch (err) {
+  console.warn('Usando almacenamiento local de respaldo:', err);
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
