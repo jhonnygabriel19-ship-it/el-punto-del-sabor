@@ -55,10 +55,9 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-// ==========================================
-// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
-// ==========================================
-
+// ========================================== 
+// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
+// ========================================== 
 const appId = 'el-punto-del-sabor-app';
 let db = null;
 let auth = null;
