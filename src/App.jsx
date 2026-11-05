@@ -55,19 +55,24 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-// ==========================================
-// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
-// ==========================================
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'el-punto-del-sabor-app';
+// ========================================== 
+// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
+// ========================================== 
+const appId = 'el-punto-del-sabor-app';
 let db = null;
 let auth = null;
 try {
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(firebaseApp);
-    auth = getAuth(firebaseApp);
-  }
+  const firebaseConfig = {
+    apiKey: "AIzaSyDKyi-0uuIY4fjDwkZ83xicc4ArTdGF6Gk",
+    authDomain: "el-punto-del-sabor-45b3d.firebaseapp.com",
+    projectId: "el-punto-del-sabor-45b3d",
+    storageBucket: "el-punto-del-sabor-45b3d.firebasestorage.app",
+    messagingSenderId: "501069850002",
+    appId: "1:501069850002:web:ee740ed897148e870e8d4b"
+  };
+  const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  db = getFirestore(firebaseApp);
+  auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Usando almacenamiento local de respaldo:', err);
 }
