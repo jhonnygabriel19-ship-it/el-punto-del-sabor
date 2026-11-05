@@ -616,7 +616,7 @@ export default function App() {
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
   const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
-  const [loginPassword, setLoginPassword] = useState('21237816');
+  const [loginPassword, setLoginPassword] = useState('21497110');
   const [loginError, setLoginError] = useState('');
 
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
