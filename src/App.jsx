@@ -55,9 +55,9 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-// ==========================================
-// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
-// ==========================================
+// ========================================== 
+// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
+// ========================================== 
 const appId = 'el-punto-del-sabor-app';
 let db = null;
 let auth = null;
@@ -70,13 +70,16 @@ try {
     messagingSenderId: "501069850002",
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
-  
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
-  console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
+  console.warn('Usando almacenamiento local de respaldo:', err);
 }
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
 function wrapCanvasText(ctx, text, maxWidth) {
   const words = String(text || '').split(' ');
@@ -167,7 +170,7 @@ const INITIAL_USERS = [
   {
     id: 'usr_1',
     username: 'Michelle Sifontes',
-    password: '21497110',
+    password: '21237816',
     role: 'Socia Administradora'
   },
   {
@@ -372,12 +375,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-1234567 | V-12345678 | Banco de Venezuela' },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@tucorreo.com' },
-  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: '' },
-  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: '' },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-0000-0000-0000 | V-12345678 | BDV' },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@tucorreo.com' }
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true },
+  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false },
+  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false },
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -615,7 +618,7 @@ export default function App() {
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
   const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
-  const [loginPassword, setLoginPassword] = useState('21497110');
+  const [loginPassword, setLoginPassword] = useState('21237816');
   const [loginError, setLoginError] = useState('');
 
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
@@ -732,53 +735,83 @@ export default function App() {
   // ==========================================
   // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
   // ==========================================
-// Escuchar cambios desde la base de datos en la nube para no perder ningún registro
-useEffect(() => {
-  if (!db || !fbUser) return;
-  const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
-  const unsub = onSnapshot(
-    stateDocRef,
-    (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        
-        // 🛑 FRENO AL BUCLE INFINITO: Solo actualiza si la nube tiene datos realmente distintos
-        if (Array.isArray(data.users)) setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
-        if (Array.isArray(data.products)) setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
-        if (Array.isArray(data.deliveryZones)) setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
-        if (Array.isArray(data.paymentMethods)) setPaymentMethods(prev => JSON.stringify(prev) === JSON.stringify(data.paymentMethods) ? prev : data.paymentMethods);
-        if (Array.isArray(data.customers)) setCustomers(prev => JSON.stringify(prev) === JSON.stringify(data.customers) ? prev : data.customers);
-        if (Array.isArray(data.expenses)) setExpenses(prev => JSON.stringify(prev) === JSON.stringify(data.expenses) ? prev : data.expenses);
-        if (Array.isArray(data.sales)) setSales(prev => JSON.stringify(prev) === JSON.stringify(data.sales) ? prev : data.sales);
-        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplyCatalog) ? prev : data.supplyCatalog);
-        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplierCatalog) ? prev : data.supplierCatalog);
-        
-        if (data.securityDeletePin) setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
-        if (data.businessWhatsApp) setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
-        
-        setCloudReady(true);
-      } else {
-        // Inicializar documento en la nube
-        setDoc(
-          stateDocRef,
-          {
-            users, products, deliveryZones, paymentMethods, customers, expenses, sales, supplyCatalog, supplierCatalog, securityDeletePin, businessWhatsApp,
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
-          .then(() => setCloudReady(true))
-          .catch(() => setCloudReady(true));
+  useEffect(() => {
+    if (!auth) return;
+    let isMounted = true;
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (e) {
+        console.warn('Error de autenticación en nube:', e);
       }
-    },
-    (err) => {
-      console.warn('Error leyendo estado en la nube:', err);
-    }
-  );
-  return () => unsub();
-}, [fbUser]);
+    };
+    initAuth();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (isMounted && u) {
+        setFbUser(u);
+      }
+    });
+    return () => {
+      isMounted = false;
+      unsub();
+    };
+  }, []);
 
-    const persistToCloud = async (partialData) => {
+  useEffect(() => {
+    if (!db || !fbUser) return;
+    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
+    const unsub = onSnapshot(
+      stateDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
+          if (Array.isArray(data.products)) setProducts(data.products);
+          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
+          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
+          if (Array.isArray(data.customers)) setCustomers(data.customers);
+          if (Array.isArray(data.expenses)) setExpenses(data.expenses);
+          if (Array.isArray(data.sales)) setSales(data.sales);
+          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) setSupplyCatalog(data.supplyCatalog);
+          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
+          if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
+          if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
+          setCloudReady(true);
+        } else {
+          setDoc(
+            stateDocRef,
+            {
+              users,
+              products,
+              deliveryZones,
+              paymentMethods,
+              customers,
+              expenses,
+              sales,
+              supplyCatalog,
+              supplierCatalog,
+              securityDeletePin,
+              businessWhatsApp,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          )
+            .then(() => setCloudReady(true))
+            .catch(() => setCloudReady(true));
+        }
+      },
+      (err) => {
+        console.warn('Error leyendo estado en la nube:', err);
+      }
+    );
+    return () => unsub();
+  }, [fbUser]);
+
+  const persistToCloud = async (partialData) => {
     if (!db || !fbUser) return;
     try {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -791,8 +824,7 @@ useEffect(() => {
         { merge: true }
       );
     } catch (e) {
-      console.error('No se pudo sincronizar cambio en la nube:', e);
-      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
+      console.warn('No se pudo sincronizar cambio en la nube:', e);
     }
   };
 
@@ -872,11 +904,6 @@ useEffect(() => {
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
-
-  // NUEVO: Cuentas receptoras y Modal de Revisión
-  const [receivingAccounts, setReceivingAccounts] = useState(() => loadFromStorage('epds_accounts_v2', ['BDV Empresa', 'Caja Efectivo', 'Binance Principal', 'Zelle General']));
-  const [paymentReceiverAccount, setPaymentReceiverAccount] = useState('BDV Empresa');
-  const [reviewInvoiceModal, setReviewInvoiceModal] = useState(null);
 
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
@@ -1721,8 +1748,8 @@ useEffect(() => {
     showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
-  // Emitir Factura - PASO 1: Modal de Revisión
-  const handleReviewCheckout = () => {
+  // Emitir Factura
+  const handleCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1742,6 +1769,14 @@ useEffect(() => {
       phone: paymentSenderPhone || 'S/N',
       document: paymentSenderDoc || 'V-00000000'
     };
+
+    const formattedSenderSummary = [
+      paymentSenderName || customerObj.name,
+      paymentSenderDoc || customerObj.document,
+      paymentSenderBank
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     const newInvoice = {
       id: `sale_${Date.now()}`,
@@ -1767,21 +1802,19 @@ useEffect(() => {
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
-        receiverAccount: paymentCondition === 'credito' ? 'Pendiente' : paymentReceiverAccount
+        senderName: paymentSenderName || customerObj.name,
+        senderDocument: paymentSenderDoc || customerObj.document,
+        senderBank: paymentCondition === 'credito' ? 'Pendiente' : (paymentSenderBank || 'N/A'),
+        senderPhone: paymentSenderPhone || customerObj.phone,
+        sender: formattedSenderSummary,
+        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim()
       },
       notes: orderNotes
     };
 
-    setReviewInvoiceModal(newInvoice);
-  };
-
-  // Emitir Factura - PASO 2: Confirmación Final
-  const handleConfirmCheckout = () => {
-    if (!reviewInvoiceModal) return;
-
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = reviewInvoiceModal.items.find(i => i.productId === prod.id);
+        const soldItem = cart.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
@@ -1789,19 +1822,18 @@ useEffect(() => {
 
     setCustomers(prev =>
       prev.map(c =>
-        c.id === reviewInvoiceModal.customerId
-          ? { ...c, address: reviewInvoiceModal.deliveryAddress, defaultZoneId: reviewInvoiceModal.deliveryZoneName }
+        c.id === selectedCustomerId
+          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
           : c
       )
     );
 
-    setSales(prev => [reviewInvoiceModal, ...prev]);
-    setLastInvoiceModal(reviewInvoiceModal);
+    setSales(prev => [newInvoice, ...prev]);
+    setLastInvoiceModal(newInvoice);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    setReviewInvoiceModal(null);
-    showNotification(`Factura ${reviewInvoiceModal.invoiceNumber} registrada con éxito.`);
+    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
   };
 
   const handleSaveCustomer = (e) => {
