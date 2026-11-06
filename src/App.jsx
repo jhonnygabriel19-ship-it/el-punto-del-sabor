@@ -3285,18 +3285,26 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      <div className="pt-1 border-t border-stone-200">
-                        <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
-                          Datos del Emisor del Pago (Celdas Individuales):
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
-                              👤 Nombre del Emisor:
-                            </label>
-                            <input
-                              type="text"
-                              value={paymentSenderName}
+                      <div className="mt-3 pt-3 border-t border-stone-200">
+                        <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                          📥 ¿A qué cuenta ingresó este pago? (Cuenta Receptora):
+                        </label>
+                        <select
+                          value={paymentReceiverAccount}
+                          onChange={e => setPaymentReceiverAccount(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                        >
+                          {receivingAccounts.map((acc, idx) => (
+                            <option key={idx} value={acc}>{acc}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    type="text"
+                    value={orderNotes}
                               onChange={e => setPaymentSenderName(e.target.value)}
                               placeholder="Ej: Carlos Mendoza"
                               className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
