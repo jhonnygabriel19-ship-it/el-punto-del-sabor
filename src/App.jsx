@@ -1721,8 +1721,8 @@ useEffect(() => {
     showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
-  // Emitir Factura - PASO 1: Validar y Revisar Venta
-  const handleReviewCheckout = () => {
+  // Emitir Factura
+  const handleCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1747,7 +1747,9 @@ useEffect(() => {
       paymentSenderName || customerObj.name,
       paymentSenderDoc || customerObj.document,
       paymentSenderBank
-    ].filter(Boolean).join(' | ');
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     const newInvoice = {
       id: `sale_${Date.now()}`,
@@ -1778,22 +1780,14 @@ useEffect(() => {
         senderBank: paymentCondition === 'credito' ? 'Pendiente' : (paymentSenderBank || 'N/A'),
         senderPhone: paymentSenderPhone || customerObj.phone,
         sender: formattedSenderSummary,
-        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim(),
-        receiverAccount: paymentCondition === 'credito' ? 'Pendiente' : paymentReceiverAccount // Guardamos cuenta receptora
+        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim()
       },
       notes: orderNotes
     };
 
-    setReviewInvoiceModal(newInvoice);
-  };
-
-  // Emitir Factura - PASO 2: Aprobar y Guardar
-  const handleConfirmCheckout = () => {
-    if (!reviewInvoiceModal) return;
-
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = reviewInvoiceModal.items.find(i => i.productId === prod.id);
+        const soldItem = cart.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
@@ -1801,19 +1795,18 @@ useEffect(() => {
 
     setCustomers(prev =>
       prev.map(c =>
-        c.id === reviewInvoiceModal.customerId
-          ? { ...c, address: reviewInvoiceModal.deliveryAddress, defaultZoneId: reviewInvoiceModal.deliveryZoneName }
+        c.id === selectedCustomerId
+          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
           : c
       )
     );
 
-    setSales(prev => [reviewInvoiceModal, ...prev]);
-    setLastInvoiceModal(reviewInvoiceModal);
+    setSales(prev => [newInvoice, ...prev]);
+    setLastInvoiceModal(newInvoice);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    setReviewInvoiceModal(null);
-    showNotification(`Factura ${reviewInvoiceModal.invoiceNumber} registrada con éxito.`);
+    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
   };
 
   const handleSaveCustomer = (e) => {
@@ -3285,88 +3278,137 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      // Emitir Factura - PASO 1: Modal de Revisión
-  const handleReviewCheckout = () => {
-    if (cart.length === 0) {
-      showNotification('Agrega al menos un producto del menú a la factura.', 'error');
-      return;
-    }
-    if (!customDeliveryAddress.trim()) {
-      showNotification('La dirección de envío es obligatoria para la factura delivery.', 'error');
-      return;
-    }
-    if (paymentCondition === 'contado' && selectedPaymentMethod === 'Pago Móvil' && !paymentReference.trim()) {
-      showNotification('Ingresa el número de referencia del Pago Móvil.', 'error');
-      return;
-    }
+                      <div className="pt-1 border-t border-stone-200">
+                        <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
+                          Datos del Emisor del Pago (Celdas Individuales):
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                              👤 Nombre del Emisor:
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentSenderName}
+                              onChange={e => setPaymentSenderName(e.target.value)}
+                              placeholder="Ej: Carlos Mendoza"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                            />
+                          </div>
 
-    const customerObj = customers.find(c => c.id === selectedCustomerId) || {
-      id: 'cli_eventual',
-      name: 'Cliente Delivery',
-      phone: paymentSenderPhone || 'S/N',
-      document: paymentSenderDoc || 'V-00000000'
-    };
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                              🪪 Cédula / RIF del Emisor:
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentSenderDoc}
+                              onChange={e => setPaymentSenderDoc(e.target.value)}
+                              placeholder="Ej: V-18452310"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                            />
+                          </div>
 
-    const newInvoice = {
-      id: `sale_${Date.now()}`,
-      invoiceNumber: getNextInvoiceNumber(paymentCondition),
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString(),
-      cashier: currentUser.username,
-      customerId: customerObj.id,
-      customerName: customerObj.name,
-      customerPhone: customerObj.phone,
-      customerDocument: customerObj.document,
-      deliveryAddress: customDeliveryAddress.trim(),
-      deliveryZoneName: selectedZone.name,
-      deliveryFee: Number(selectedZone.fee || 0),
-      items: cart,
-      subtotal: cartSubtotal,
-      totalCost: cartTotalCost,
-      total: cartTotalUSD,
-      totalBs: cartTotalBs,
-      exchangeRateUsed: exchangeRate,
-      paymentCondition,
-      creditPaid: paymentCondition === 'contado',
-      paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
-      paymentDetails: {
-        reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
-        receiverAccount: paymentCondition === 'credito' ? 'Pendiente' : paymentReceiverAccount
-      },
-      notes: orderNotes
-    };
+                          <div>
+                            {selectedPaymentMethod.toLowerCase().includes('binance') ? (
+                              <>
+                                <label className="block text-[10px] font-bold text-amber-700 mb-0.5">
+                                  🟡 Usuario / Correo / ID Binance Emisor:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={paymentSenderBank}
+                                  onChange={e => setPaymentSenderBank(e.target.value)}
+                                  placeholder="Ej: usuario_binance o correo@..."
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-amber-400 text-xs bg-white font-bold text-stone-900"
+                                />
+                              </>
+                            ) : selectedPaymentMethod.toLowerCase().includes('efectivo') ? (
+                              <>
+                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                                  💵 Detalle de Billetes / Efectivo (Opcional):
+                                </label>
+                                <input
+                                  type="text"
+                                  value={paymentSenderBank}
+                                  onChange={e => setPaymentSenderBank(e.target.value)}
+                                  placeholder="Vacío o detalle de billete recibido..."
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                                />
+                              </>
+                            ) : selectedPaymentMethod.toLowerCase().includes('zelle') ? (
+                              <>
+                                <label className="block text-[10px] font-bold text-purple-700 mb-0.5">
+                                  💜 Correo / Titular de Cuenta Zelle:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={paymentSenderBank}
+                                  onChange={e => setPaymentSenderBank(e.target.value)}
+                                  placeholder="Titular o correo Zelle emisor..."
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-purple-300 text-xs bg-white text-stone-900"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <label className="block text-[10px] font-bold text-stone-600">
+                                    🏦 Banco Emisor (Venezuela):
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsCustomBankEdit(!isCustomBankEdit);
+                                      if (!isCustomBankEdit) setPaymentSenderBank('');
+                                    }}
+                                    className="text-[9px] font-extrabold text-amber-700 hover:underline"
+                                  >
+                                    {isCustomBankEdit ? '▼ Ver Lista de Bancos' : '✎ Escribir otro'}
+                                  </button>
+                                </div>
+                                {isCustomBankEdit ? (
+                                  <input
+                                    type="text"
+                                    value={paymentSenderBank}
+                                    onChange={e => setPaymentSenderBank(e.target.value)}
+                                    placeholder="Escribe el nombre o código del banco..."
+                                    className="w-full px-2.5 py-1.5 rounded-lg border border-amber-400 text-xs bg-white font-bold text-stone-900"
+                                  />
+                                ) : (
+                                  <select
+                                    value={paymentSenderBank}
+                                    onChange={e => setPaymentSenderBank(e.target.value)}
+                                    className="w-full px-2 py-1.5 rounded-lg border border-stone-300 text-xs bg-white font-bold text-stone-900"
+                                  >
+                                    <option value="">-- Seleccionar Banco de Venezuela --</option>
+                                    {VENEZUELAN_BANKS.map(b => (
+                                      <option key={b} value={b}>
+                                        {b}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </>
+                            )}
+                          </div>
 
-    setReviewInvoiceModal(newInvoice);
-  };
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
+                              📱 Teléfono Emisor:
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentSenderPhone}
+                              onChange={e => setPaymentSenderPhone(e.target.value)}
+                              placeholder="Ej: 0414-8823411"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-  // Emitir Factura - PASO 2: Confirmación Final
-  const handleConfirmCheckout = () => {
-    if (!reviewInvoiceModal) return;
-
-    setProducts(prev =>
-      prev.map(prod => {
-        const soldItem = reviewInvoiceModal.items.find(i => i.productId === prod.id);
-        if (!soldItem) return prod;
-        return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
-      })
-    );
-
-    setCustomers(prev =>
-      prev.map(c =>
-        c.id === reviewInvoiceModal.customerId
-          ? { ...c, address: reviewInvoiceModal.deliveryAddress, defaultZoneId: reviewInvoiceModal.deliveryZoneName }
-          : c
-      )
-    );
-
-    setSales(prev => [reviewInvoiceModal, ...prev]);
-    setLastInvoiceModal(reviewInvoiceModal);
-    setCart([]);
-    setPaymentReference('');
-    setOrderNotes('');
-    setReviewInvoiceModal(null);
-    showNotification(`Factura ${reviewInvoiceModal.invoiceNumber} registrada con éxito.`);
-  };
                   <input
                     type="text"
                     value={orderNotes}
