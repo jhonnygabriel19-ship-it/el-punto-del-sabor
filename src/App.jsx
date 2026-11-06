@@ -372,12 +372,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-1234567 | V-12345678 | Banco de Venezuela' },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@tucorreo.com' },
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-0000000 | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@elpuntodelsabor.com' },
   { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: '' },
   { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: '' },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-0000-0000-0000 | V-12345678 | BDV' },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@tucorreo.com' }
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-xxxx-xxxx-xxxx | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@elpuntodelsabor.com' }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -729,9 +729,9 @@ export default function App() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // ==========================================
-  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
-  // ==========================================
+  // ========================================== 
+// CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE) 
+// ========================================== 
 // Escuchar cambios desde la base de datos en la nube para no perder ningún registro
 useEffect(() => {
   if (!db || !fbUser) return;
@@ -872,11 +872,6 @@ useEffect(() => {
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
-
-  // NUEVO: Cuentas receptoras y Modal de Revisión
-  const [receivingAccounts, setReceivingAccounts] = useState(() => loadFromStorage('epds_accounts_v2', ['BDV Empresa', 'Caja Efectivo', 'Binance Principal', 'Zelle General']));
-  const [paymentReceiverAccount, setPaymentReceiverAccount] = useState('BDV Empresa');
-  const [reviewInvoiceModal, setReviewInvoiceModal] = useState(null);
 
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
