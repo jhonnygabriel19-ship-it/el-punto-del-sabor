@@ -372,12 +372,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true },
-  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false },
-  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true }
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-0000000 | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@elpuntodelsabor.com' },
+  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: '' },
+  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: '' },
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-xxxx-xxxx-xxxx | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@elpuntodelsabor.com' }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -872,6 +872,11 @@ useEffect(() => {
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
+
+  // === NUEVOS ESTADOS: CUENTAS Y REVISIÓN ===
+  const [receivingAccounts, setReceivingAccounts] = useState(() => loadFromStorage('epds_accounts_v2', ['BDV Empresa', 'Caja Efectivo', 'Binance Principal']));
+  const [paymentReceiverAccount, setPaymentReceiverAccount] = useState('BDV Empresa');
+  const [reviewInvoiceModal, setReviewInvoiceModal] = useState(null);
 
   const handleSelectPaymentMethodInPOS = (methodName) => {
     setSelectedPaymentMethod(methodName);
