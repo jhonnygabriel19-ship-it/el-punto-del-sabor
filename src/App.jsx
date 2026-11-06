@@ -1721,8 +1721,8 @@ useEffect(() => {
     showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
-  // Emitir Factura - PASO 1: Validar y Revisar Venta
-  const handleReviewCheckout = () => {
+  // Emitir Factura
+  const handleCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1747,7 +1747,9 @@ useEffect(() => {
       paymentSenderName || customerObj.name,
       paymentSenderDoc || customerObj.document,
       paymentSenderBank
-    ].filter(Boolean).join(' | ');
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     const newInvoice = {
       id: `sale_${Date.now()}`,
@@ -1778,43 +1780,10 @@ useEffect(() => {
         senderBank: paymentCondition === 'credito' ? 'Pendiente' : (paymentSenderBank || 'N/A'),
         senderPhone: paymentSenderPhone || customerObj.phone,
         sender: formattedSenderSummary,
-        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim(),
-        receiverAccount: paymentCondition === 'credito' ? 'Pendiente' : paymentReceiverAccount // Guardamos cuenta receptora
+        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim()
       },
       notes: orderNotes
     };
-
-    setReviewInvoiceModal(newInvoice);
-  };
-
-  // Emitir Factura - PASO 2: Aprobar y Guardar
-  const handleConfirmCheckout = () => {
-    if (!reviewInvoiceModal) return;
-
-    setProducts(prev =>
-      prev.map(prod => {
-        const soldItem = reviewInvoiceModal.items.find(i => i.productId === prod.id);
-        if (!soldItem) return prod;
-        return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
-      })
-    );
-
-    setCustomers(prev =>
-      prev.map(c =>
-        c.id === reviewInvoiceModal.customerId
-          ? { ...c, address: reviewInvoiceModal.deliveryAddress, defaultZoneId: reviewInvoiceModal.deliveryZoneName }
-          : c
-      )
-    );
-
-    setSales(prev => [reviewInvoiceModal, ...prev]);
-    setLastInvoiceModal(reviewInvoiceModal);
-    setCart([]);
-    setPaymentReference('');
-    setOrderNotes('');
-    setReviewInvoiceModal(null);
-    showNotification(`Factura ${reviewInvoiceModal.invoiceNumber} registrada con éxito.`);
-  };
 
     setProducts(prev =>
       prev.map(prod => {
@@ -3308,6 +3277,26 @@ useEffect(() => {
                           />
                         </div>
                       </div>
+
+                        <div>
+                          <div className="mt-3 mb-2 p-2.5 rounded-xl border border-emerald-300 bg-emerald-50">
+                        <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                          📥 ¿A qué cuenta ingresó este pago? (Cuenta Receptora):
+                        </label>
+                        <select
+                          value={paymentReceiverAccount}
+                          onChange={e => setPaymentReceiverAccount(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-white text-xs font-bold text-stone-900"
+                        >
+                          {receivingAccounts.map((acc, idx) => (
+                            <option key={idx} value={acc}>{acc}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="pt-1 border-t border-stone-200">
+                        <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
+                          Datos del Emisor del Pago (Celdas Individuales):
 
                       <div className="pt-1 border-t border-stone-200">
                         <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
