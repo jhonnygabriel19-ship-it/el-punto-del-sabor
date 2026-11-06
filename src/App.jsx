@@ -1721,8 +1721,8 @@ useEffect(() => {
     showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
-  // Emitir Factura
-  const handleCheckout = () => {
+  // Emitir Factura - PASO 1: Modal de Revisión
+  const handleReviewCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
@@ -1742,14 +1742,6 @@ useEffect(() => {
       phone: paymentSenderPhone || 'S/N',
       document: paymentSenderDoc || 'V-00000000'
     };
-
-    const formattedSenderSummary = [
-      paymentSenderName || customerObj.name,
-      paymentSenderDoc || customerObj.document,
-      paymentSenderBank
-    ]
-      .filter(Boolean)
-      .join(' | ');
 
     const newInvoice = {
       id: `sale_${Date.now()}`,
@@ -1775,19 +1767,21 @@ useEffect(() => {
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
-        senderName: paymentSenderName || customerObj.name,
-        senderDocument: paymentSenderDoc || customerObj.document,
-        senderBank: paymentCondition === 'credito' ? 'Pendiente' : (paymentSenderBank || 'N/A'),
-        senderPhone: paymentSenderPhone || customerObj.phone,
-        sender: formattedSenderSummary,
-        bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim()
+        receiverAccount: paymentCondition === 'credito' ? 'Pendiente' : paymentReceiverAccount
       },
       notes: orderNotes
     };
 
+    setReviewInvoiceModal(newInvoice);
+  };
+
+  // Emitir Factura - PASO 2: Confirmación Final
+  const handleConfirmCheckout = () => {
+    if (!reviewInvoiceModal) return;
+
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = cart.find(i => i.productId === prod.id);
+        const soldItem = reviewInvoiceModal.items.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
@@ -1795,18 +1789,19 @@ useEffect(() => {
 
     setCustomers(prev =>
       prev.map(c =>
-        c.id === selectedCustomerId
-          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
+        c.id === reviewInvoiceModal.customerId
+          ? { ...c, address: reviewInvoiceModal.deliveryAddress, defaultZoneId: reviewInvoiceModal.deliveryZoneName }
           : c
       )
     );
 
-    setSales(prev => [newInvoice, ...prev]);
-    setLastInvoiceModal(newInvoice);
+    setSales(prev => [reviewInvoiceModal, ...prev]);
+    setLastInvoiceModal(reviewInvoiceModal);
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
+    setReviewInvoiceModal(null);
+    showNotification(`Factura ${reviewInvoiceModal.invoiceNumber} registrada con éxito.`);
   };
 
   const handleSaveCustomer = (e) => {
