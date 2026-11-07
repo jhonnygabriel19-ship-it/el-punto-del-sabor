@@ -55,9 +55,9 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-// ==========================================
-// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
-// ==========================================
+// ========================================== 
+// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
+// ========================================== 
 const appId = 'el-punto-del-sabor-app';
 let db = null;
 let auth = null;
@@ -74,7 +74,7 @@ try {
   db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
-  console.warn('Usando almacenamiento local de respaldo:', err);
+  console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
 }
 
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
@@ -167,7 +167,7 @@ const INITIAL_USERS = [
   {
     id: 'usr_1',
     username: 'Michelle Sifontes',
-    password: '21237816',
+    password: '21497110',
     role: 'Socia Administradora'
   },
   {
@@ -372,12 +372,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true },
-  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false },
-  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true }
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-0000000 | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@elpuntodelsabor.com' },
+  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: '' },
+  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: '' },
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-xxxx-xxxx-xxxx | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@elpuntodelsabor.com' }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -615,7 +615,7 @@ export default function App() {
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
   const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
-  const [loginPassword, setLoginPassword] = useState('21237816');
+  const [loginPassword, setLoginPassword] = useState('21497110');
   const [loginError, setLoginError] = useState('');
 
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
@@ -729,86 +729,85 @@ export default function App() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // ==========================================
-  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
-  // ==========================================
-  useEffect(() => {
-    if (!auth) return;
-    let isMounted = true;
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) {
-        console.warn('Error de autenticación en nube:', e);
+// ========================================== 
+// AUTENTICACIÓN SILENCIOSA DE FIREBASE 
+// ========================================== 
+useEffect(() => {
+  if (!auth) return;
+  let isMounted = true;
+  const initAuth = async () => {
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
       }
-    };
-    initAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (isMounted && u) {
-        setFbUser(u);
-      }
-    });
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, []);
+    } catch (e) {
+      console.warn('Error de autenticación en nube:', e);
+    }
+  };
+  initAuth();
+  const unsub = onAuthStateChanged(auth, (u) => {
+    if (isMounted && u) {
+      setFbUser(u);
+    }
+  });
+  return () => {
+    isMounted = false;
+    unsub();
+  };
+}, []);
 
-  useEffect(() => {
-    if (!db || !fbUser) return;
-    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
-    const unsub = onSnapshot(
-      stateDocRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
-          if (Array.isArray(data.products)) setProducts(data.products);
-          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
-          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
-          if (Array.isArray(data.customers)) setCustomers(data.customers);
-          if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-          if (Array.isArray(data.sales)) setSales(data.sales);
-          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) setSupplyCatalog(data.supplyCatalog);
-          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
-          if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
-          if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
-          setCloudReady(true);
-        } else {
-          setDoc(
-            stateDocRef,
-            {
-              users,
-              products,
-              deliveryZones,
-              paymentMethods,
-              customers,
-              expenses,
-              sales,
-              supplyCatalog,
-              supplierCatalog,
-              securityDeletePin,
-              businessWhatsApp,
-              updatedAt: new Date().toISOString()
-            },
-            { merge: true }
-          )
-            .then(() => setCloudReady(true))
-            .catch(() => setCloudReady(true));
-        }
-      },
-      (err) => {
-        console.warn('Error leyendo estado en la nube:', err);
+// ========================================== 
+// CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE) 
+// ========================================== 
+// Escuchar cambios desde la base de datos en la nube para no perder ningún registro
+useEffect(() => {
+  if (!db || !fbUser) return;
+  const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
+  const unsub = onSnapshot(
+    stateDocRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        
+        // 🛑 FRENO AL BUCLE INFINITO: Solo actualiza si la nube tiene datos realmente distintos
+        if (Array.isArray(data.users)) setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
+        if (Array.isArray(data.products)) setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
+        if (Array.isArray(data.deliveryZones)) setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
+        if (Array.isArray(data.paymentMethods)) setPaymentMethods(prev => JSON.stringify(prev) === JSON.stringify(data.paymentMethods) ? prev : data.paymentMethods);
+        if (Array.isArray(data.customers)) setCustomers(prev => JSON.stringify(prev) === JSON.stringify(data.customers) ? prev : data.customers);
+        if (Array.isArray(data.expenses)) setExpenses(prev => JSON.stringify(prev) === JSON.stringify(data.expenses) ? prev : data.expenses);
+        if (Array.isArray(data.sales)) setSales(prev => JSON.stringify(prev) === JSON.stringify(data.sales) ? prev : data.sales);
+        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplyCatalog) ? prev : data.supplyCatalog);
+        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplierCatalog) ? prev : data.supplierCatalog);
+        
+        if (data.securityDeletePin) setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
+        if (data.businessWhatsApp) setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
+        
+        setCloudReady(true);
+      } else {
+        // Inicializar documento en la nube
+        setDoc(
+          stateDocRef,
+          {
+            users, products, deliveryZones, paymentMethods, customers, expenses, sales, supplyCatalog, supplierCatalog, securityDeletePin, businessWhatsApp,
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        )
+          .then(() => setCloudReady(true))
+          .catch(() => setCloudReady(true));
       }
-    );
-    return () => unsub();
-  }, [fbUser]);
+    },
+    (err) => {
+      console.warn('Error leyendo estado en la nube:', err);
+    }
+  );
+  return () => unsub();
+}, [fbUser]);
 
-  const persistToCloud = async (partialData) => {
+    const persistToCloud = async (partialData) => {
     if (!db || !fbUser) return;
     try {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -821,7 +820,8 @@ export default function App() {
         { merge: true }
       );
     } catch (e) {
-      console.warn('No se pudo sincronizar cambio en la nube:', e);
+      console.error('No se pudo sincronizar cambio en la nube:', e);
+      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
     }
   };
 
