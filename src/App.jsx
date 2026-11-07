@@ -70,13 +70,13 @@ try {
     messagingSenderId: "501069850002",
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
-  
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
 }
+
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
 function wrapCanvasText(ctx, text, maxWidth) {
   const words = String(text || '').split(' ');
@@ -729,7 +729,36 @@ export default function App() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // ========================================== 
+// ========================================== 
+// AUTENTICACIÓN SILENCIOSA DE FIREBASE 
+// ========================================== 
+useEffect(() => {
+  if (!auth) return;
+  let isMounted = true;
+  const initAuth = async () => {
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (e) {
+      console.warn('Error de autenticación en nube:', e);
+    }
+  };
+  initAuth();
+  const unsub = onAuthStateChanged(auth, (u) => {
+    if (isMounted && u) {
+      setFbUser(u);
+    }
+  });
+  return () => {
+    isMounted = false;
+    unsub();
+  };
+}, []);
+
+// ========================================== 
 // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE) 
 // ========================================== 
 // Escuchar cambios desde la base de datos en la nube para no perder ningún registro
