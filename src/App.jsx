@@ -4817,12 +4817,26 @@ useEffect(() => {
                     <Sparkles className="w-4 h-4" /> + Simular Venta Delivery Ahora (1 Clic)
                   </button>
                   <button
-                    type="button"
-                    onClick={handleExportFullBackupJSON}
-                    className="px-4 py-3 rounded-2xl bg-stone-900 text-amber-400 font-bold text-xs flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" /> Descargar Base de Datos (.JSON)
-                  </button>
+                      type="button"
+                      onClick={handleExportFullBackupJSON}
+                      className="px-4 py-3 rounded-2xl bg-stone-900 text-amber-400 font-bold text-xs flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" /> Descargar Base de Datos (.JSON)
+                    </button>
+  
+                    {/* PEGA EL NUEVO BOTÓN DE RESTAURAR AQUÍ */}
+                    <label className="w-full px-4 py-3 rounded-2xl bg-amber-500 text-stone-950 font-black text-xs shadow flex justify-center gap-2 cursor-pointer">
+                      <Upload className="w-4 h-4" /> 2. Restaurar Sistema (.JSON)
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={handleImportFullBackupJSON}
+                      />
+                    </label>
+                    {/* FIN DEL NUEVO BOTÓN */}
+
+                  </div>
                 </div>
               </div>
             </div>
