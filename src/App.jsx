@@ -2187,6 +2187,32 @@ useEffect(() => {
     showNotification('Respaldo completo de la base de datos (.JSON) descargado.');
   };
 
+  const handleImportFullBackupJSON = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+      
+        if (importedData.categories) setCategories(importedData.categories);
+        if (importedData.receivingAccounts) setReceivingAccounts(importedData.receivingAccounts);
+        if (importedData.products) setProducts(importedData.products);
+        if (importedData.deliveryZones) setDeliveryZones(importedData.deliveryZones);
+        if (importedData.paymentMethods) setPaymentMethods(importedData.paymentMethods);
+        if (importedData.customers) setCustomers(importedData.customers);
+        if (importedData.sales) setSales(importedData.sales);
+      
+        alert('✅ Base de datos restaurada correctamente desde el JSON.');
+      } catch (error) {
+        alert('❌ Error al leer el archivo. Asegúrate de que sea un respaldo .JSON válido.');
+        console.error(error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const copyTextToClipboard = (text) => {
     try {
       const textarea = document.createElement('textarea');
