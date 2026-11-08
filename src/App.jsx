@@ -114,6 +114,7 @@ const createFoodSvgDataUri = (emoji, title, bgFrom = '#f59e0b', bgTo = '#ea580c'
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
+// Fotografías reales verificadas por categoría como respaldo primario
 const FALLBACK_BY_CATEGORY = {
   perros: 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?auto=format&fit=crop&w=700&q=80',
   combos: 'https://images.unsplash.com/photo-1541214113241-21578d2d9b62?auto=format&fit=crop&w=700&q=80',
@@ -156,9 +157,20 @@ const VENEZUELAN_BANKS = [
 // ==========================================
 // DATOS INICIALES PRE-CARGADOS ("EL PUNTO DEL SABOR")
 // ==========================================
+
 const INITIAL_USERS = [
-  { id: 'usr_1', username: 'Michelle Sifontes', password: '21237816', role: 'Socia Administradora' },
-  { id: 'usr_2', username: 'Jhonny Rivas', password: '19749698', role: 'Socio Administrador' }
+  {
+    id: 'usr_1',
+    username: 'Michelle Sifontes',
+    password: '21497110',
+    role: 'Socia Administradora'
+  },
+  {
+    id: 'usr_2',
+    username: 'Jhonny Rivas',
+    password: '19749698',
+    role: 'Socio Administrador'
+  }
 ];
 
 const INITIAL_PRODUCTS = [
@@ -476,8 +488,24 @@ const INITIAL_SALES = [
     deliveryZoneName: 'Casco Central / Urbanizaciones Medias (3 a 5 km)',
     deliveryFee: 2.00,
     items: [
-      { productId: 'prod_combo_2', name: 'Combo 2: 2 Perros Especiales + Refresco', category: 'combos', qty: 2, price: 5.80, cost: 2.60, subtotal: 11.60 },
-      { productId: 'prod_perro_3', name: 'Perro Polaco / Jumbo Supremo', category: 'perros', qty: 1, price: 3.50, cost: 1.55, subtotal: 3.50 }
+      {
+        productId: 'prod_combo_2',
+        name: 'Combo 2: 2 Perros Especiales + Refresco',
+        category: 'combos',
+        qty: 2,
+        price: 5.80,
+        cost: 2.60,
+        subtotal: 11.60
+      },
+      {
+        productId: 'prod_perro_3',
+        name: 'Perro Polaco / Jumbo Supremo',
+        category: 'perros',
+        qty: 1,
+        price: 3.50,
+        cost: 1.55,
+        subtotal: 3.50
+      }
     ],
     subtotal: 15.10,
     totalCost: 6.75,
@@ -512,7 +540,15 @@ const INITIAL_SALES = [
     deliveryZoneName: 'Zona Cercana (Hasta 2 km)',
     deliveryFee: 1.00,
     items: [
-      { productId: 'prod_combo_1', name: 'Combo 1: 2 Perros Clásicos + Refresco', category: 'combos', qty: 2, price: 4.20, cost: 1.85, subtotal: 8.40 }
+      {
+        productId: 'prod_combo_1',
+        name: 'Combo 1: 2 Perros Clásicos + Refresco',
+        category: 'combos',
+        qty: 2,
+        price: 4.20,
+        cost: 1.85,
+        subtotal: 8.40
+      }
     ],
     subtotal: 8.40,
     totalCost: 3.70,
@@ -553,7 +589,7 @@ const DEFAULT_PAYMENT_RECEIVERS = [
     holder: 'Michelle Sifontes',
     bank: '0102 - Banco de Venezuela (BDV)',
     phone: '0424-9043122',
-    document: 'V-21237816',
+    document: 'V-21497110',
     account: '',
     binanceId: '',
     email: '',
@@ -580,112 +616,10 @@ function loadFromStorage(key, fallback) {
   }
 }
 
-// ==========================================
-// SANEAMIENTO DE DATOS (evita pantallas negras por registros incompletos)
-// ==========================================
-function sanitizeProduct(p) {
-  if (!p || typeof p !== 'object') return null;
-  const rawCat = typeof p.category === 'string' && p.category ? p.category : 'perros';
-  return {
-    id: p.id || `prod_${Math.random().toString(36).slice(2, 9)}`,
-    name: typeof p.name === 'string' && p.name.trim() ? p.name : 'Producto sin nombre',
-    description: typeof p.description === 'string' ? p.description : '',
-    category: rawCat,
-    stage: Number(p.stage) || 1,
-    price: Number(p.price) || 0,
-    cost: Number(p.cost) || 0,
-    stock: Number(p.stock) || 0,
-    minStock: Number(p.minStock) || 10,
-    active: p.active !== false,
-    image:
-      typeof p.image === 'string' && p.image
-        ? p.image
-        : FALLBACK_BY_CATEGORY[rawCat] || FALLBACK_BY_CATEGORY.perros
-  };
-}
-
-function sanitizeSale(s) {
-  if (!s || typeof s !== 'object') return null;
-  const items = Array.isArray(s.items)
-    ? s.items.map(i => ({
-        productId: i.productId || '',
-        name: typeof i.name === 'string' ? i.name : 'Producto',
-        category: typeof i.category === 'string' ? i.category : 'otros',
-        qty: Number(i.qty) || 0,
-        price: Number(i.price) || 0,
-        cost: Number(i.cost) || 0,
-        subtotal: Number(i.subtotal) || 0
-      }))
-    : [];
-  return {
-    ...s,
-    items,
-    customerName: typeof s.customerName === 'string' ? s.customerName : 'Cliente',
-    customerPhone: typeof s.customerPhone === 'string' ? s.customerPhone : '',
-    customerDocument: typeof s.customerDocument === 'string' ? s.customerDocument : '',
-    deliveryAddress: typeof s.deliveryAddress === 'string' ? s.deliveryAddress : '',
-    deliveryZoneName: typeof s.deliveryZoneName === 'string' ? s.deliveryZoneName : 'Delivery',
-    deliveryFee: Number(s.deliveryFee) || 0,
-    subtotal: Number(s.subtotal) || 0,
-    totalCost: Number(s.totalCost) || 0,
-    total: Number(s.total) || 0,
-    totalBs: Number(s.totalBs) || 0,
-    exchangeRateUsed: Number(s.exchangeRateUsed) || 0,
-    paymentCondition: s.paymentCondition === 'credito' ? 'credito' : 'contado',
-    paymentMethod: typeof s.paymentMethod === 'string' ? s.paymentMethod : 'N/A',
-    paymentDetails: s.paymentDetails && typeof s.paymentDetails === 'object' ? s.paymentDetails : {},
-    invoiceNumber: typeof s.invoiceNumber === 'string' ? s.invoiceNumber : 'EPDS-XXXX',
-    date: typeof s.date === 'string' ? s.date : new Date().toISOString().split('T')[0]
-  };
-}
-
-function sanitizeCustomer(c) {
-  if (!c || typeof c !== 'object') return null;
-  return {
-    id: c.id || `cli_${Math.random().toString(36).slice(2, 9)}`,
-    name: typeof c.name === 'string' && c.name.trim() ? c.name : 'Cliente',
-    document: typeof c.document === 'string' ? c.document : '',
-    phone: typeof c.phone === 'string' ? c.phone : '',
-    address: typeof c.address === 'string' ? c.address : '',
-    defaultZoneId: c.defaultZoneId || 'zone_1'
-  };
-}
-
-function sanitizeCategory(c) {
-  if (!c || typeof c !== 'object') return null;
-  return {
-    id: typeof c.id === 'string' && c.id ? c.id : `cat_${Math.random().toString(36).slice(2, 9)}`,
-    label: typeof c.label === 'string' && c.label.trim() ? c.label : 'Categoría',
-    isFixed: !!c.isFixed
-  };
-}
-
-function sanitizePaymentReceiver(r) {
-  if (!r || typeof r !== 'object') return null;
-  return {
-    id: r.id || `pr_${Math.random().toString(36).slice(2, 9)}`,
-    type: typeof r.type === 'string' && r.type ? r.type : 'pago_movil',
-    holder: typeof r.holder === 'string' ? r.holder : '',
-    bank: typeof r.bank === 'string' ? r.bank : '',
-    phone: typeof r.phone === 'string' ? r.phone : '',
-    document: typeof r.document === 'string' ? r.document : '',
-    account: typeof r.account === 'string' ? r.account : '',
-    binanceId: typeof r.binanceId === 'string' ? r.binanceId : '',
-    email: typeof r.email === 'string' ? r.email : '',
-    isActive: r.isActive !== false,
-    showToCustomers: r.showToCustomers !== false
-  };
-}
-
-function ensureCategories(list) {
-  const clean = (Array.isArray(list) ? list : []).map(sanitizeCategory).filter(Boolean);
-  if (!clean.some(c => c.id === 'todos')) {
-    clean.unshift({ id: 'todos', label: 'Todos', isFixed: true });
-  }
-  return clean.length > 0 ? clean : DEFAULT_CATEGORIES;
-}
-
 export default function App() {
+  // ==========================================
+  // ESTADOS PRINCIPALES Y PERSISTENCIA EN NUBE + LOCAL
+  // ==========================================
   const [fbUser, setFbUser] = useState(null);
   const [cloudReady, setCloudReady] = useState(false);
 
@@ -698,7 +632,10 @@ export default function App() {
   const [isCustomerPublicView, setIsCustomerPublicView] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.get('vista') === 'menu' || window.location.hash.includes('menu-digital');
+      return (
+        params.get('vista') === 'menu' ||
+        window.location.hash.includes('menu-digital')
+      );
     } catch (e) {
       return false;
     }
@@ -749,6 +686,7 @@ export default function App() {
   const [deletePinAttempt, setDeletePinAttempt] = useState('');
   const [deletePinError, setDeletePinError] = useState('');
 
+  // Filtro de facturas (contado / crédito) y modal de cobro de factura a crédito
   const [invoiceFilterType, setInvoiceFilterType] = useState('all');
   const [creditPaymentModal, setCreditPaymentModal] = useState({
     isOpen: false,
@@ -766,24 +704,16 @@ export default function App() {
     notes: ''
   });
 
-  // ✅ FIX: Categorías saneadas y con "todos" garantizado
-  const [categories, setCategories] = useState(() =>
-    ensureCategories(loadFromStorage('epds_categories_v2', DEFAULT_CATEGORIES))
-  );
+  // NUEVOS ESTADOS: Categorías, Ruta Search, Cuentas de Pago
+  const [categories, setCategories] = useState(() => loadFromStorage('epds_categories_v2', DEFAULT_CATEGORIES));
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({ id: '', label: '' });
-
+  
   const [zoneSearchInput, setZoneSearchInput] = useState('');
   const [showZoneSuggestions, setShowZoneSuggestions] = useState(false);
 
-  // ✅ FIX: Cuentas de pago saneadas
-  const [paymentReceivers, setPaymentReceivers] = useState(() => {
-    const saved = loadFromStorage('epds_payment_receivers_v2', DEFAULT_PAYMENT_RECEIVERS);
-    return (Array.isArray(saved) ? saved : DEFAULT_PAYMENT_RECEIVERS)
-      .map(sanitizePaymentReceiver)
-      .filter(Boolean);
-  });
+  const [paymentReceivers, setPaymentReceivers] = useState(() => loadFromStorage('epds_payment_receivers_v2', DEFAULT_PAYMENT_RECEIVERS));
   const [showPaymentReceiverModal, setShowPaymentReceiverModal] = useState(false);
   const [editingPaymentReceiver, setEditingPaymentReceiver] = useState(null);
   const [paymentReceiverForm, setPaymentReceiverForm] = useState({
@@ -800,7 +730,6 @@ export default function App() {
   const [showPaymentShareModal, setShowPaymentShareModal] = useState(false);
   const [paymentShareSelections, setPaymentShareSelections] = useState({});
 
-  // ✅ FIX: Productos saneados
   const [products, setProducts] = useState(() => {
     const saved = loadFromStorage('epds_products_v2', INITIAL_PRODUCTS);
     const brokenOrOldUrls = [
@@ -809,39 +738,20 @@ export default function App() {
       'photo-1581636625402-29b2a704ef13',
       'data:image/svg+xml'
     ];
-    const rawList = Array.isArray(saved) ? saved : INITIAL_PRODUCTS;
-    return rawList
-      .map(item => {
-        if (!item) return null;
-        const freshDefault = INITIAL_PRODUCTS.find(p => p.id === item.id);
-        const needsRealPhotoUpgrade = brokenOrOldUrls.some(b => (item.image || '').includes(b));
-        let merged = item;
-        if (needsRealPhotoUpgrade && freshDefault) {
-          merged = { ...item, image: freshDefault.image };
-        }
-        return sanitizeProduct(merged);
-      })
-      .filter(Boolean);
+    return saved.map(item => {
+      const freshDefault = INITIAL_PRODUCTS.find(p => p.id === item.id);
+      const needsRealPhotoUpgrade = brokenOrOldUrls.some(b => (item.image || '').includes(b));
+      if (needsRealPhotoUpgrade && freshDefault) {
+        return { ...item, image: freshDefault.image };
+      }
+      return item;
+    });
   });
   const [deliveryZones, setDeliveryZones] = useState(() => loadFromStorage('epds_zones_v2', INITIAL_DELIVERY_ZONES));
   const [paymentMethods, setPaymentMethods] = useState(() => loadFromStorage('epds_pm_v2', INITIAL_PAYMENT_METHODS));
-
-  // ✅ FIX: Clientes saneados
-  const [customers, setCustomers] = useState(() => {
-    const saved = loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS);
-    return (Array.isArray(saved) ? saved : INITIAL_CUSTOMERS)
-      .map(sanitizeCustomer)
-      .filter(Boolean);
-  });
+  const [customers, setCustomers] = useState(() => loadFromStorage('epds_customers_v2', INITIAL_CUSTOMERS));
   const [expenses, setExpenses] = useState(() => loadFromStorage('epds_expenses_v2', INITIAL_EXPENSES));
-
-  // ✅ FIX: Ventas saneadas
-  const [sales, setSales] = useState(() => {
-    const saved = loadFromStorage('epds_sales_v2', INITIAL_SALES);
-    return (Array.isArray(saved) ? saved : INITIAL_SALES)
-      .map(sanitizeSale)
-      .filter(Boolean);
-  });
+  const [sales, setSales] = useState(() => loadFromStorage('epds_sales_v2', INITIAL_SALES));
 
   const [supplyCatalog, setSupplyCatalog] = useState(() =>
     loadFromStorage('epds_supply_catalog_v2', INITIAL_SUPPLY_CATALOG)
@@ -857,7 +767,7 @@ export default function App() {
   };
 
   // ==========================================
-  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE
+  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
   // ==========================================
   useEffect(() => {
     if (!auth) return;
@@ -875,7 +785,9 @@ export default function App() {
     };
     initAuth();
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (isMounted && u) setFbUser(u);
+      if (isMounted && u) {
+        setFbUser(u);
+      }
     });
     return () => {
       isMounted = false;
@@ -883,7 +795,6 @@ export default function App() {
     };
   }, []);
 
-  // ✅ FIX: onSnapshot con saneamiento de todos los datos
   useEffect(() => {
     if (!db || !fbUser) return;
     const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -892,46 +803,19 @@ export default function App() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
-
           if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
-
-          if (Array.isArray(data.products)) {
-            const cleanProds = data.products.map(sanitizeProduct).filter(Boolean);
-            if (cleanProds.length > 0) setProducts(cleanProds);
-          }
-
-          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) {
-            setDeliveryZones(data.deliveryZones);
-          }
-          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) {
-            setPaymentMethods(data.paymentMethods);
-          }
-
-          if (Array.isArray(data.customers)) {
-            setCustomers(data.customers.map(sanitizeCustomer).filter(Boolean));
-          }
-          if (Array.isArray(data.sales)) {
-            setSales(data.sales.map(sanitizeSale).filter(Boolean));
-          }
-
+          if (Array.isArray(data.products)) setProducts(data.products);
+          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
+          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
+          if (Array.isArray(data.customers)) setCustomers(data.customers);
           if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) {
-            setSupplyCatalog(data.supplyCatalog);
-          }
-          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) {
-            setSupplierCatalog(data.supplierCatalog);
-          }
-
+          if (Array.isArray(data.sales)) setSales(data.sales);
+          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) setSupplyCatalog(data.supplyCatalog);
+          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
           if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
           if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
-
-          if (Array.isArray(data.categories)) {
-            setCategories(ensureCategories(data.categories));
-          }
-          if (Array.isArray(data.paymentReceivers)) {
-            setPaymentReceivers(data.paymentReceivers.map(sanitizePaymentReceiver).filter(Boolean));
-          }
-
+          if (Array.isArray(data.categories)) setCategories(data.categories);
+          if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers);
           setCloudReady(true);
         } else {
           setDoc(
@@ -971,7 +855,10 @@ export default function App() {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
       await setDoc(
         stateDocRef,
-        { ...partialData, updatedAt: new Date().toISOString() },
+        {
+          ...partialData,
+          updatedAt: new Date().toISOString()
+        },
         { merge: true }
       );
     } catch (e) {
@@ -1129,14 +1016,21 @@ export default function App() {
 
   useEffect(() => {
     syncBCVExchangeRate(true);
-    const interval = setInterval(() => syncBCVExchangeRate(true), 30 * 60 * 1000);
+    const interval = setInterval(() => {
+      syncBCVExchangeRate(true);
+    }, 30 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   const requestAuthorizedDelete = (title, description, actionCallback) => {
     setDeletePinAttempt('');
     setDeletePinError('');
-    setDeleteModal({ isOpen: true, title, description, onConfirm: actionCallback });
+    setDeleteModal({
+      isOpen: true,
+      title,
+      description,
+      onConfirm: actionCallback
+    });
   };
 
   const handleConfirmProtectedDelete = (e) => {
@@ -1145,7 +1039,9 @@ export default function App() {
       setDeletePinError('Clave especial de seguridad incorrecta. Operación cancelada.');
       return;
     }
-    if (typeof deleteModal.onConfirm === 'function') deleteModal.onConfirm();
+    if (typeof deleteModal.onConfirm === 'function') {
+      deleteModal.onConfirm();
+    }
     setDeleteModal({ isOpen: false, title: '', description: '', onConfirm: null });
     setDeletePinAttempt('');
     setDeletePinError('');
@@ -1162,8 +1058,15 @@ export default function App() {
         if (editingProduct && editingProduct.id === prod.id) {
           setEditingProduct(null);
           setProductForm({
-            name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
-            minStock: 10, description: '', image: ''
+            name: '',
+            category: 'perros',
+            stage: 1,
+            price: '',
+            cost: '',
+            stock: '',
+            minStock: 10,
+            description: '',
+            image: ''
           });
         }
         showNotification(`Producto "${prod.name}" eliminado del menú.`);
@@ -1173,15 +1076,26 @@ export default function App() {
 
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
-    name: '', document: '', phone: '', address: '', defaultZoneId: 'zone_1'
+    name: '',
+    document: '',
+    phone: '',
+    address: '',
+    defaultZoneId: 'zone_1'
   });
 
   const [newZoneForm, setNewZoneForm] = useState({ name: '', fee: '' });
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
-    name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
-    minStock: 10, description: '', image: ''
+    name: '',
+    category: 'perros',
+    stage: 1,
+    price: '',
+    cost: '',
+    stock: '',
+    minStock: 10,
+    description: '',
+    image: ''
   });
 
   const [expenseForm, setExpenseForm] = useState({
@@ -1197,29 +1111,31 @@ export default function App() {
   const [showSupplySuggestions, setShowSupplySuggestions] = useState(false);
   const [showSupplierSuggestions, setShowSupplierSuggestions] = useState(false);
 
-  // ✅ FIX: matchingSupplies y matchingSuppliers seguros
   const matchingSupplies = useMemo(() => {
     const q = (expenseForm.category || '').trim().toLowerCase();
     if (!q) return supplyCatalog;
     return supplyCatalog.filter(
       item =>
-        (item?.name || '').toLowerCase().includes(q) ||
-        (item?.defaultDescription || '').toLowerCase().includes(q)
+        item.name.toLowerCase().includes(q) ||
+        (item.defaultDescription || '').toLowerCase().includes(q)
     );
   }, [supplyCatalog, expenseForm.category]);
 
   const matchingSuppliers = useMemo(() => {
     const q = (expenseForm.supplier || '').trim().toLowerCase();
     if (!q) return supplierCatalog;
-    return supplierCatalog.filter(sup => (sup || '').toLowerCase().includes(q));
+    return supplierCatalog.filter(sup => sup.toLowerCase().includes(q));
   }, [supplierCatalog, expenseForm.supplier]);
 
   const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
   const [passwordChangeForm, setPasswordChangeForm] = useState({
-    newPassword: '', confirmPassword: ''
+    newPassword: '',
+    confirmPassword: ''
   });
   const [newUserForm, setNewUserForm] = useState({
-    username: '', password: '', role: 'Operador de Ventas'
+    username: '',
+    password: '',
+    role: 'Operador de Ventas'
   });
   const [newPaymentMethodName, setNewPaymentMethodName] = useState('');
 
@@ -1228,7 +1144,9 @@ export default function App() {
     const found = customers.find(c => c.id === custId);
     if (found) {
       setCustomDeliveryAddress(found.address);
-      if (found.defaultZoneId) setSelectedZoneId(found.defaultZoneId);
+      if (found.defaultZoneId) {
+        setSelectedZoneId(found.defaultZoneId);
+      }
       setPaymentSenderName(found.name || '');
       setPaymentSenderDoc(found.document || '');
       setPaymentSenderPhone(found.phone || '');
@@ -1236,7 +1154,7 @@ export default function App() {
   };
 
   // ==========================================
-  // GENERADOR Y DESCARGA DE PDF
+  // GENERADOR Y DESCARGA DIRECTA DE ARCHIVO .PDF CON MÁRGENES AJUSTADOS
   // ==========================================
   const generateAndDownloadPDF = (title, subtitle, linesArray, filename = 'Documento.pdf') => {
     try {
@@ -1283,8 +1201,10 @@ export default function App() {
 
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
+
       ctx.fillStyle = '#1c1917';
       ctx.fillRect(0, 0, width, 120);
+
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 25px sans-serif';
       ctx.fillText('EL PUNTO DEL SABOR', marginX, 46);
@@ -1324,6 +1244,7 @@ export default function App() {
           ctx.strokeStyle = '#f59e0b';
           ctx.lineWidth = 1.5;
           ctx.strokeRect(marginX, y - 18, contentWidth, boxHeight);
+
           ctx.fillStyle = '#1c1917';
           ctx.font = 'bold 14px sans-serif';
           block.lines.forEach((txtLine, idx) => {
@@ -1363,14 +1284,18 @@ export default function App() {
       const pdfH = Math.round((height / width) * 595);
 
       addString('%PDF-1.4\n');
+
       startObj(1);
       addString('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
       startObj(2);
       addString('<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+
       startObj(3);
       addString(
         `<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im1 4 0 R >> >> /MediaBox [0 0 ${pdfW} ${pdfH}] /Contents 5 0 R >>\nendobj\n`
       );
+
       startObj(4);
       addString(
         `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegLength} >>\nstream\n`
@@ -1425,23 +1350,28 @@ export default function App() {
       { text: `Ruta Asignada: ${invoice.deliveryZoneName} ($${Number(invoice.deliveryFee).toFixed(2)})` },
       { type: 'divider' },
       { type: 'header', text: 'DATOS DEL PAGO Y EMISOR' },
-      { text: `Condición: ${(invoice.paymentCondition || 'contado').toUpperCase()}   |   Método: ${invoice.paymentMethod}`, bold: true },
+      { text: `Condición: ${invoice.paymentCondition.toUpperCase()}   |   Método: ${invoice.paymentMethod}`, bold: true },
       { text: `N° de Referencia: ${invoice.paymentDetails?.reference || 'N/A'}`, bold: true },
       { text: `Nombre del Emisor: ${invoice.paymentDetails?.senderName || invoice.paymentDetails?.sender || 'N/A'}` },
       { text: `Cédula / RIF Emisor: ${invoice.paymentDetails?.senderDocument || 'N/A'}` },
       { text: `Banco Emisor: ${invoice.paymentDetails?.senderBank || 'N/A'}   |   Tel: ${invoice.paymentDetails?.senderPhone || 'N/A'}` },
       { type: 'divider' },
       { type: 'header', text: 'DETALLE DE PRODUCTOS FACTURADOS' },
-      ...(Array.isArray(invoice.items) ? invoice.items : []).map(item => ({
-        text: `${item.qty}x ${item.name}  —  $${Number(item.price).toFixed(2)} c/u  =  $${Number(item.subtotal).toFixed(2)}`,
+      ...invoice.items.map(item => ({
+        text: `${item.qty}x ${item.name}  —  $${item.price.toFixed(2)} c/u  =  $${item.subtotal.toFixed(2)}`,
         bold: true
       })),
       { type: 'divider' },
       { text: `Subtotal Productos: $${Number(invoice.subtotal).toFixed(2)}` },
       { text: `Costo de Envío Delivery: $${Number(invoice.deliveryFee).toFixed(2)}` },
-      { type: 'total', text: `TOTAL FACTURA: $${Number(invoice.total).toFixed(2)} USD   (Bs. ${Number(invoice.totalBs).toFixed(2)})` }
+      {
+        type: 'total',
+        text: `TOTAL FACTURA: $${Number(invoice.total).toFixed(2)} USD   (Bs. ${Number(invoice.totalBs).toFixed(2)})`
+      }
     ];
-    if (invoice.notes) lines.push({ text: `Nota de entrega / cocina: ${invoice.notes}`, bold: true });
+    if (invoice.notes) {
+      lines.push({ text: `Nota de entrega / cocina: ${invoice.notes}`, bold: true });
+    }
     generateAndDownloadPDF(
       `Factura Delivery ${invoice.invoiceNumber}`,
       `Fecha: ${invoice.date} | Tasa aplicada: Bs. ${invoice.exchangeRateUsed}/$`,
@@ -1467,7 +1397,10 @@ export default function App() {
         text: `${s.invoiceNumber} | ${s.customerName} | ${s.paymentMethod} Ref: ${s.paymentDetails?.reference || 'N/A'} | $${s.total.toFixed(2)}`
       })),
       { type: 'divider' },
-      { type: 'total', text: `TOTAL PERCIBIDO EN EL DÍA: $${totalDayUSD.toFixed(2)} USD   (Bs. ${(totalDayUSD * exchangeRate).toFixed(2)})` }
+      {
+        type: 'total',
+        text: `TOTAL PERCIBIDO EN EL DÍA: $${totalDayUSD.toFixed(2)} USD   (Bs. ${(totalDayUSD * exchangeRate).toFixed(2)})`
+      }
     ];
     generateAndDownloadPDF(
       `Cierre de Ventas Diario - ${closingDate}`,
@@ -1494,7 +1427,8 @@ export default function App() {
       const origin = window.location.origin;
       const pathname = window.location.pathname || '/';
       if (
-        origin && origin !== 'null' &&
+        origin &&
+        origin !== 'null' &&
         !origin.includes('about:') &&
         !window.location.href.startsWith('about:')
       ) {
@@ -1511,7 +1445,12 @@ export default function App() {
       `¡Hola! Te compartimos nuestro menú actualizado con servicio Delivery.\n\n` +
       `📋 *Nuestros Productos Disponibles hoy:*\n` +
       availableCustomerProducts
-        .map(p => `• *${p.name}*: $${Number(p.price).toFixed(2)} (Bs. ${(Number(p.price) * exchangeRate).toFixed(2)})`)
+        .map(
+          p =>
+            `• *${p.name}*: $${Number(p.price).toFixed(2)} (Bs. ${(
+              Number(p.price) * exchangeRate
+            ).toFixed(2)})`
+        )
         .join('\n') +
       `\n\n🛵 *Tarifas Delivery:*\n` +
       deliveryZones.map(z => `• ${z.name}: $${Number(z.fee).toFixed(2)}`).join('\n') +
@@ -1519,6 +1458,7 @@ export default function App() {
       `📲 *Para ordenar responde este mensaje con:*\n1) Tu Pedido\n2) Nombre, Cédula y Teléfono\n3) Dirección exacta de envío\n4) Método de Pago y Referencia\n\n` +
       `🌐 *Enlace Web:* ${shareUrl}\n` +
       `📞 *WhatsApp Ventas:* ${businessWhatsApp}`;
+
     copyTextToClipboard(message);
     showNotification('¡Enlace y catálogo completo copiados para compartir en tus redes sociales y WhatsApp!');
   };
@@ -1526,26 +1466,48 @@ export default function App() {
   const handleDownloadCustomerMenuPDF = () => {
     const lines = [
       { type: 'header', text: 'CARTA / MENÚ DIGITAL DISPONIBLE PARA CLIENTES' },
-      { text: `Pedidos a Domicilio (Delivery) • WhatsApp: ${businessWhatsApp} • Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`, bold: true },
+      {
+        text: `Pedidos a Domicilio (Delivery) • WhatsApp: ${businessWhatsApp} • Tasa BCV: Bs. ${Number(
+          exchangeRate
+        ).toFixed(2)}/$`,
+        bold: true
+      },
       { type: 'divider' }
     ];
+
     categories.filter(c => c.id !== 'todos').forEach(cat => {
       const catProds = availableCustomerProducts.filter(p => p.category === cat.id);
       if (catProds.length > 0) {
         lines.push({ type: 'header', text: cat.label.toUpperCase() });
         catProds.forEach(p => {
-          lines.push({ text: `• ${p.name}  —  $${Number(p.price).toFixed(2)}  (Bs. ${(Number(p.price) * exchangeRate).toFixed(2)})`, bold: true });
-          if (p.description) lines.push({ text: `   ${p.description}` });
+          lines.push({
+            text: `• ${p.name}  —  $${Number(p.price).toFixed(2)}  (Bs. ${(
+              Number(p.price) * exchangeRate
+            ).toFixed(2)})`,
+            bold: true
+          });
+          if (p.description) {
+            lines.push({ text: `   ${p.description}` });
+          }
         });
         lines.push({ type: 'divider' });
       }
     });
+
     lines.push({ type: 'header', text: 'TARIFAS DE ENVÍO DELIVERY POR RUTA' });
     deliveryZones.forEach(z => {
-      lines.push({ text: `• ${z.name}: $${Number(z.fee).toFixed(2)} (Bs. ${(Number(z.fee) * exchangeRate).toFixed(2)})` });
+      lines.push({
+        text: `• ${z.name}: $${Number(z.fee).toFixed(2)} (Bs. ${(
+          Number(z.fee) * exchangeRate
+        ).toFixed(2)})`
+      });
     });
     lines.push({ type: 'divider' });
-    lines.push({ type: 'total', text: `PEDIDOS POR WHATSAPP: ${businessWhatsApp} • FORMAS DE PAGO: PAGO MÓVIL, BINANCE (USDT), EFECTIVO Y TRANSFERENCIA` });
+    lines.push({
+      type: 'total',
+      text: `PEDIDOS POR WHATSAPP: ${businessWhatsApp} • FORMAS DE PAGO: PAGO MÓVIL, BINANCE (USDT), EFECTIVO Y TRANSFERENCIA`
+    });
+
     generateAndDownloadPDF(
       'MENÚ OFICIAL DE PRODUCTOS Y COMBOS',
       `Servicio Delivery • Pedidos al ${businessWhatsApp} • Precios en USD y Bolívares`,
@@ -1563,42 +1525,60 @@ export default function App() {
       const rowHeight = 90;
       const footerBoxHeight = 96;
       const height = Math.max(1080, 230 + items.length * rowHeight + footerBoxHeight + 50);
+
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
       const grad = ctx.createLinearGradient(0, 0, 0, height);
       grad.addColorStop(0, '#1c1917');
       grad.addColorStop(1, '#292524');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
+
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, width, 155);
+
       ctx.fillStyle = '#1c1917';
       ctx.font = '900 38px sans-serif';
       ctx.fillText('🌭 EL PUNTO DEL SABOR', marginX, 62);
+
       ctx.font = 'bold 19px sans-serif';
       ctx.fillText('MENÚ DIGITAL DELIVERY • PERROS, COMBOS, BURGERS Y ESPECIALIDADES', marginX, 98);
+
       ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(`📲 Pedidos WhatsApp: ${businessWhatsApp}   |   Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`, marginX, 132);
+      ctx.fillText(
+        `📲 Pedidos WhatsApp: ${businessWhatsApp}   |   Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`,
+        marginX,
+        132
+      );
+
       let y = 195;
       const textMaxW = boxWidth - 210;
+
       items.forEach((p, idx) => {
         ctx.fillStyle = idx % 2 === 0 ? '#292524' : '#1f1c1a';
         ctx.fillRect(marginX, y - 34, boxWidth, 76);
+
         ctx.strokeStyle = '#44403c';
         ctx.lineWidth = 1;
         ctx.strokeRect(marginX, y - 34, boxWidth, 76);
+
         ctx.fillStyle = '#fbbf24';
         ctx.font = 'bold 19px sans-serif';
         const titleLines = wrapCanvasText(ctx, p.name, textMaxW);
         ctx.fillText(titleLines[0] || '', marginX + 18, y - 8);
+
         ctx.fillStyle = '#d6d3d1';
         ctx.font = '13px sans-serif';
         const descLines = wrapCanvasText(ctx, p.description || '', textMaxW);
         ctx.fillText(descLines[0] || '', marginX + 18, y + 14);
-        if (descLines[1]) ctx.fillText(descLines[1], marginX + 18, y + 31);
+        if (descLines[1]) {
+          ctx.fillText(descLines[1], marginX + 18, y + 31);
+        }
+
         const priceBoxW = 165;
         const priceBoxX = width - marginX - priceBoxW - 14;
         ctx.fillStyle = '#f59e0b';
@@ -1608,24 +1588,30 @@ export default function App() {
         ctx.fillText(`$${Number(p.price).toFixed(2)}`, priceBoxX + 14, y + 2);
         ctx.font = 'bold 13px sans-serif';
         ctx.fillText(`Bs. ${(Number(p.price) * exchangeRate).toFixed(2)}`, priceBoxX + 14, y + 22);
+
         y += rowHeight;
       });
+
       const footerY = height - footerBoxHeight - 25;
       ctx.fillStyle = '#292524';
       ctx.fillRect(marginX, footerY, boxWidth, footerBoxHeight);
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2;
       ctx.strokeRect(marginX, footerY, boxWidth, footerBoxHeight);
+
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 17px sans-serif';
       const footerLine1 = `🛵 ¡SERVICIO DELIVERY RÁPIDO! • PEDIDOS AL WHATSAPP: ${businessWhatsApp}`;
       const footerLine2 = `💳 FORMAS DE PAGO: PAGO MÓVIL • BINANCE (USDT) • EFECTIVO • TRANSFERENCIA`;
+
       const wrappedFooter1 = wrapCanvasText(ctx, footerLine1, boxWidth - 36);
       const wrappedFooter2 = wrapCanvasText(ctx, footerLine2, boxWidth - 36);
+
       ctx.fillText(wrappedFooter1[0] || '', marginX + 18, footerY + 36);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px sans-serif';
       ctx.fillText(wrappedFooter2[0] || '', marginX + 18, footerY + 68);
+
       const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -1639,17 +1625,16 @@ export default function App() {
     }
   };
 
-  // ✅ FIX: filteredProducts con safe-access
   const filteredProducts = useMemo(() => {
-    const q = (posSearch || '').trim().toLowerCase();
     return products.filter(p => {
       const matchesCategory = posCategory === 'todos' || p.category === posCategory;
       const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
+      const q = posSearch.trim().toLowerCase();
       const matchesSearch =
         !q ||
-        (p.name || '').toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q);
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
       return matchesCategory && matchesStage && matchesSearch;
     });
   }, [products, posCategory, activeStageFilter, posSearch]);
@@ -1696,8 +1681,14 @@ export default function App() {
     [deliveryZones, selectedZoneId]
   );
 
-  const cartSubtotal = useMemo(() => cart.reduce((acc, item) => acc + item.subtotal, 0), [cart]);
-  const cartTotalCost = useMemo(() => cart.reduce((acc, item) => acc + item.cost * item.qty, 0), [cart]);
+  const cartSubtotal = useMemo(
+    () => cart.reduce((acc, item) => acc + item.subtotal, 0),
+    [cart]
+  );
+  const cartTotalCost = useMemo(
+    () => cart.reduce((acc, item) => acc + item.cost * item.qty, 0),
+    [cart]
+  );
   const cartTotalUSD = cartSubtotal + Number(selectedZone.fee || 0);
   const cartTotalBs = cartTotalUSD * Number(exchangeRate || 1);
 
@@ -1809,7 +1800,11 @@ export default function App() {
       document: paymentSenderDoc || 'V-00000000'
     };
 
-    const formattedSenderSummary = [paymentSenderName || customerObj.name, paymentSenderDoc || customerObj.document, paymentSenderBank]
+    const formattedSenderSummary = [
+      paymentSenderName || customerObj.name,
+      paymentSenderDoc || customerObj.document,
+      paymentSenderBank
+    ]
       .filter(Boolean)
       .join(' | ');
 
@@ -1841,7 +1836,7 @@ export default function App() {
       creditPaid: paymentCondition === 'contado',
       paymentMethod: paymentCondition === 'credito' ? 'Crédito Pendiente' : selectedPaymentMethod,
       receiver: selectedReceiver,
-      receiverSummary,
+      receiverSummary: receiverSummary,
       paymentDetails: {
         reference: paymentCondition === 'credito' ? 'Por Cobrar (Crédito)' : (paymentReference || 'N/A'),
         senderName: paymentSenderName || customerObj.name,
@@ -1859,13 +1854,15 @@ export default function App() {
 
   const handleApproveInvoice = () => {
     if (!pendingInvoiceReview) return;
+
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = (pendingInvoiceReview.items || []).find(i => i.productId === prod.id);
+        const soldItem = pendingInvoiceReview.items.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
     );
+
     setCustomers(prev =>
       prev.map(c =>
         c.id === pendingInvoiceReview.customerId
@@ -1873,6 +1870,7 @@ export default function App() {
           : c
       )
     );
+
     setSales(prev => [pendingInvoiceReview, ...prev]);
     setLastInvoiceModal(pendingInvoiceReview);
     setPendingInvoiceReview(null);
@@ -1889,17 +1887,17 @@ export default function App() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (Array.isArray(data.products)) setProducts(data.products.map(sanitizeProduct).filter(Boolean));
+        if (Array.isArray(data.products)) setProducts(data.products);
         if (Array.isArray(data.users)) setUsers(data.users);
-        if (Array.isArray(data.customers)) setCustomers(data.customers.map(sanitizeCustomer).filter(Boolean));
-        if (Array.isArray(data.sales)) setSales(data.sales.map(sanitizeSale).filter(Boolean));
+        if (Array.isArray(data.customers)) setCustomers(data.customers);
+        if (Array.isArray(data.sales)) setSales(data.sales);
         if (Array.isArray(data.expenses)) setExpenses(data.expenses);
         if (Array.isArray(data.deliveryZones)) setDeliveryZones(data.deliveryZones);
         if (Array.isArray(data.paymentMethods)) setPaymentMethods(data.paymentMethods);
         if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(data.supplyCatalog);
         if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(data.supplierCatalog);
-        if (Array.isArray(data.categories)) setCategories(ensureCategories(data.categories));
-        if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers.map(sanitizePaymentReceiver).filter(Boolean));
+        if (Array.isArray(data.categories)) setCategories(data.categories);
+        if (Array.isArray(data.paymentReceivers)) setPaymentReceivers(data.paymentReceivers);
         if (typeof data.exchangeRate === 'number') setExchangeRate(data.exchangeRate);
         showNotification('¡Respaldo restaurado correctamente!');
       } catch (err) {
@@ -1933,6 +1931,7 @@ export default function App() {
       showNotification('Selecciona al menos una cuenta de pago para compartir.', 'error');
       return;
     }
+
     const typeLabels = {
       pago_movil: '📱 Pago Móvil',
       transferencia: '🏦 Transferencia Bancaria',
@@ -1940,6 +1939,7 @@ export default function App() {
       zelle: '💜 Zelle',
       efectivo: '💵 Efectivo'
     };
+
     const lines = [
       `💳 *DATOS PARA REALIZAR TU PAGO*`,
       `*EL PUNTO DEL SABOR* 🌭`,
@@ -1947,6 +1947,7 @@ export default function App() {
       `A continuación nuestros datos para que puedas realizar tu pago:`,
       ''
     ];
+
     selected.forEach((r, idx) => {
       lines.push(`*${idx + 1}. ${typeLabels[r.type] || r.type}*`);
       if (r.holder) lines.push(`• Titular: ${r.holder}`);
@@ -1958,12 +1959,15 @@ export default function App() {
       if (r.email) lines.push(`• Email: ${r.email}`);
       lines.push('');
     });
+
     lines.push(`💰 *Tasa BCV del día:* Bs. ${Number(exchangeRate).toFixed(2)}/$`);
     lines.push(`📞 *WhatsApp Ventas:* ${businessWhatsApp}`);
     lines.push('');
     lines.push(`⚠️ *IMPORTANTE:* Después de pagar, envía el comprobante y el número de referencia por WhatsApp para confirmar tu pedido.`);
+
     const message = lines.join('\n');
     copyTextToClipboard(message);
+
     const rawBizPhone = businessWhatsApp.replace(/[^0-9]/g, '');
     const intlPhone = rawBizPhone.startsWith('0') ? `58${rawBizPhone.slice(1)}` : rawBizPhone;
     window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -2019,14 +2023,24 @@ export default function App() {
       );
       showNotification('Cuenta de pago actualizada.');
     } else {
-      setPaymentReceivers(prev => [...prev, { id: `pr_${Date.now()}`, ...data, isActive: true }]);
+      setPaymentReceivers(prev => [
+        ...prev,
+        { id: `pr_${Date.now()}`, ...data, isActive: true }
+      ]);
       showNotification('Cuenta de pago agregada.');
     }
     setShowPaymentReceiverModal(false);
     setEditingPaymentReceiver(null);
     setPaymentReceiverForm({
-      type: 'pago_movil', holder: '', bank: '', phone: '', document: '',
-      account: '', binanceId: '', email: '', showToCustomers: true
+      type: 'pago_movil',
+      holder: '',
+      bank: '',
+      phone: '',
+      document: '',
+      account: '',
+      binanceId: '',
+      email: '',
+      showToCustomers: true
     });
   };
 
@@ -2062,7 +2076,13 @@ export default function App() {
     setPaymentSenderName(created.name);
     setPaymentSenderDoc(created.document);
     setPaymentSenderPhone(created.phone);
-    setNewCustomerForm({ name: '', document: '', phone: '', address: '', defaultZoneId: 'zone_1' });
+    setNewCustomerForm({
+      name: '',
+      document: '',
+      phone: '',
+      address: '',
+      defaultZoneId: 'zone_1'
+    });
     setShowQuickCustomerModal(false);
     showNotification(`Cliente "${created.name}" registrado y seleccionado.`);
   };
@@ -2115,7 +2135,9 @@ export default function App() {
       showNotification('Completa el nombre y el precio del producto.', 'error');
       return;
     }
-    const fallbackImg = FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
+    const fallbackImg =
+      FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
+
     if (editingProduct) {
       setProducts(prev =>
         prev.map(p =>
@@ -2153,10 +2175,18 @@ export default function App() {
       setProducts(prev => [newProd, ...prev]);
       showNotification(`Producto "${newProd.name}" agregado al menú.`);
     }
+
     setEditingProduct(null);
     setProductForm({
-      name: '', category: 'perros', stage: 1, price: '', cost: '', stock: '',
-      minStock: 10, description: '', image: ''
+      name: '',
+      category: 'perros',
+      stage: 1,
+      price: '',
+      cost: '',
+      stock: '',
+      minStock: 10,
+      description: '',
+      image: ''
     });
   };
 
@@ -2172,7 +2202,10 @@ export default function App() {
   };
 
   const handleSelectSupplierFromMemory = (supplierName) => {
-    setExpenseForm(prev => ({ ...prev, supplier: supplierName }));
+    setExpenseForm(prev => ({
+      ...prev,
+      supplier: supplierName
+    }));
     setShowSupplierSuggestions(false);
   };
 
@@ -2185,6 +2218,7 @@ export default function App() {
     const cleanCategory = expenseForm.category.trim();
     const cleanSupplier = expenseForm.supplier.trim() || 'Proveedor General';
     const cleanDesc = expenseForm.description.trim() || cleanCategory;
+
     const exp = {
       id: `exp_${Date.now()}`,
       date: expenseForm.date,
@@ -2196,57 +2230,76 @@ export default function App() {
       expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 0),
       consumedPercent: Number(expenseForm.consumedPercent || 0)
     };
+
     setSupplyCatalog(prev => {
       const exists = prev.some(i => i.name.toLowerCase() === cleanCategory.toLowerCase());
       if (exists) return prev;
       return [
-        { name: cleanCategory, type: expenseForm.type, expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 100), defaultDescription: cleanDesc },
+        {
+          name: cleanCategory,
+          type: expenseForm.type,
+          expectedYieldUnits: Number(expenseForm.expectedYieldUnits || 100),
+          defaultDescription: cleanDesc
+        },
         ...prev
       ];
     });
+
     setSupplierCatalog(prev => {
       const exists = prev.some(s => s.toLowerCase() === cleanSupplier.toLowerCase());
       if (exists) return prev;
       return [cleanSupplier, ...prev];
     });
+
     setExpenses(prev => [exp, ...prev]);
     setExpenseForm({
       date: new Date().toISOString().split('T')[0],
-      type: 'insumo', category: '', description: '', amount: '', supplier: '',
-      expectedYieldUnits: 100, consumedPercent: 20
+      type: 'insumo',
+      category: '',
+      description: '',
+      amount: '',
+      supplier: '',
+      expectedYieldUnits: 100,
+      consumedPercent: 20
     });
     showNotification(`Compra de "${cleanCategory}" en "${cleanSupplier}" guardada en memoria.`);
   };
 
-  // ✅ FIX: kpiMetrics con items garantizado
   const kpiMetrics = useMemo(() => {
     const totalSalesRevenue = sales.reduce((acc, s) => acc + Number(s.total || 0), 0);
     const totalFoodRevenue = sales.reduce((acc, s) => acc + Number(s.subtotal || 0), 0);
     const totalDeliveryRevenue = sales.reduce((acc, s) => acc + Number(s.deliveryFee || 0), 0);
     const totalRecipeCost = sales.reduce((acc, s) => acc + Number(s.totalCost || 0), 0);
+
     const cashCollected = sales
       .filter(s => s.paymentCondition === 'contado' || s.creditPaid)
       .reduce((acc, s) => acc + Number(s.total || 0), 0);
+
     const pendingCredit = sales
       .filter(s => s.paymentCondition === 'credito' && !s.creditPaid)
       .reduce((acc, s) => acc + Number(s.total || 0), 0);
+
     const totalInsumosExpenses = expenses
       .filter(e => e.type === 'insumo' || e.type === 'operativo')
       .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+
     const totalInitialInvestment = expenses
       .filter(e => e.type === 'inversion')
       .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+
     const grossProfit = totalFoodRevenue - totalRecipeCost;
     const grossMarginPct = totalFoodRevenue > 0 ? (grossProfit / totalFoodRevenue) * 100 : 0;
     const netOperatingBalance = totalSalesRevenue - totalInsumosExpenses;
-    const roiProgressPct = totalInitialInvestment > 0
-      ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100))
-      : 100;
+    const roiProgressPct =
+      totalInitialInvestment > 0 ? Math.min(100, Math.max(0, (grossProfit / totalInitialInvestment) * 100)) : 100;
+
     const totalUnitsSold = sales.reduce(
-      (acc, s) => acc + (Array.isArray(s.items) ? s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0) : 0),
+      (acc, s) => acc + s.items.reduce((sum, i) => sum + Number(i.qty || 0), 0),
       0
     );
+
     const alarms = [];
+
     products.forEach(p => {
       if (Number(p.stock) <= Number(p.minStock)) {
         alarms.push({
@@ -2257,6 +2310,7 @@ export default function App() {
         });
       }
     });
+
     expenses
       .filter(e => e.type === 'insumo' && Number(e.expectedYieldUnits) > 0)
       .forEach(e => {
@@ -2270,6 +2324,7 @@ export default function App() {
           });
         }
       });
+
     products.forEach(p => {
       const margin = ((p.price - p.cost) / p.price) * 100;
       if (margin < 45) {
@@ -2281,6 +2336,7 @@ export default function App() {
         });
       }
     });
+
     if (pendingCredit > 0) {
       alarms.push({
         id: 'alm_credit_pending',
@@ -2289,11 +2345,22 @@ export default function App() {
         detail: `Tienes $${pendingCredit.toFixed(2)} pendientes por cobrar de facturas a crédito.`
       });
     }
+
     return {
-      totalSalesRevenue, totalFoodRevenue, totalDeliveryRevenue, totalRecipeCost,
-      cashCollected, pendingCredit, totalInsumosExpenses, totalInitialInvestment,
-      grossProfit, grossMarginPct, netOperatingBalance, roiProgressPct,
-      totalUnitsSold, alarms
+      totalSalesRevenue,
+      totalFoodRevenue,
+      totalDeliveryRevenue,
+      totalRecipeCost,
+      cashCollected,
+      pendingCredit,
+      totalInsumosExpenses,
+      totalInitialInvestment,
+      grossProfit,
+      grossMarginPct,
+      netOperatingBalance,
+      roiProgressPct,
+      totalUnitsSold,
+      alarms
     };
   }, [sales, expenses, products]);
 
@@ -2301,7 +2368,9 @@ export default function App() {
     const BOM = '\uFEFF';
     const csvLines = [
       headers.join(';'),
-      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';'))
+      ...rows.map(row =>
+        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
+      )
     ];
     const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -2318,8 +2387,18 @@ export default function App() {
     const backup = {
       businessName: 'El Punto del Sabor',
       exportedAt: new Date().toISOString(),
-      exchangeRate, users, products, deliveryZones, paymentMethods, customers,
-      expenses, sales, supplyCatalog, supplierCatalog, categories, paymentReceivers
+      exchangeRate,
+      users,
+      products,
+      deliveryZones,
+      paymentMethods,
+      customers,
+      expenses,
+      sales,
+      supplyCatalog,
+      supplierCatalog,
+      categories,
+      paymentReceivers
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -2356,12 +2435,11 @@ export default function App() {
     }
   };
 
-  // ✅ FIX: handleLogin con safe-access
   const handleLogin = (e) => {
     e.preventDefault();
     const found = users.find(
       u =>
-        (u.username || '').toLowerCase() === loginUsername.trim().toLowerCase() &&
+        u.username.toLowerCase() === loginUsername.trim().toLowerCase() &&
         u.password === loginPassword
     );
     if (!found) {
@@ -2388,7 +2466,15 @@ export default function App() {
       deliveryZoneName: 'Zona Cercana (Hasta 2 km)',
       deliveryFee: 1.0,
       items: [
-        { productId: 'prod_combo_1', name: 'Combo 1: 2 Perros Clásicos + Refresco', category: 'combos', qty: 1, price: 4.2, cost: 1.85, subtotal: 4.2 }
+        {
+          productId: 'prod_combo_1',
+          name: 'Combo 1: 2 Perros Clásicos + Refresco',
+          category: 'combos',
+          qty: 1,
+          price: 4.2,
+          cost: 1.85,
+          subtotal: 4.2
+        }
       ],
       subtotal: 4.2,
       totalCost: 1.85,
@@ -2413,13 +2499,12 @@ export default function App() {
   };
 
   if (isCustomerPublicView) {
-    // ✅ FIX: búsqueda segura en la vista pública
     const publicProducts = availableCustomerProducts.filter(p => {
       const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
-      const q = (customerSearch || '').trim().toLowerCase();
+      const q = customerSearch.trim().toLowerCase();
       const matchQ =
         !q ||
-        (p.name || '').toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q);
       return matchCat && matchQ;
     });
@@ -2481,10 +2566,9 @@ export default function App() {
       const cleanAddr = customerOrderForm.address.trim();
 
       setCustomers(prev => {
-        // ✅ FIX: comparación segura con datos de cliente
         const exists = prev.some(
           c =>
-            (c.name || '').toLowerCase() === cleanName.toLowerCase() ||
+            c.name.toLowerCase() === cleanName.toLowerCase() ||
             (cleanPhone && c.phone === cleanPhone)
         );
         if (exists) return prev;
@@ -3029,23 +3113,15 @@ export default function App() {
     );
   }
 
-  // ==========================================
-  // CÁLCULOS DEL CIERRE DIARIO (con items seguros)
-  // ==========================================
   const dailyClosingSales = sales.filter(s => s.date === closingDate);
   const dailyProductSummary = {};
   dailyClosingSales.forEach(s => {
-    (Array.isArray(s.items) ? s.items : []).forEach(item => {
-      const key = item?.name || 'Producto';
-      if (!dailyProductSummary[key]) {
-        dailyProductSummary[key] = {
-          qty: 0,
-          totalUSD: 0,
-          category: item?.category || 'otros'
-        };
+    s.items.forEach(item => {
+      if (!dailyProductSummary[item.name]) {
+        dailyProductSummary[item.name] = { qty: 0, totalUSD: 0, category: item.category };
       }
-      dailyProductSummary[key].qty += Number(item?.qty) || 0;
-      dailyProductSummary[key].totalUSD += Number(item?.subtotal) || 0;
+      dailyProductSummary[item.name].qty += item.qty;
+      dailyProductSummary[item.name].totalUSD += item.subtotal;
     });
   });
 
@@ -3532,7 +3608,7 @@ export default function App() {
                             .filter(r => r.isActive !== false)
                             .map(r => (
                               <option key={r.id} value={r.id}>
-                                {r.holder} • {(r.type || '').replace('_', ' ')} • {r.bank || r.binanceId || r.email || ''}
+                                {r.holder} • {r.type.replace('_', ' ')} • {r.bank || r.binanceId || r.email || ''}
                               </option>
                             ))}
                         </select>
@@ -3887,8 +3963,15 @@ export default function App() {
                         onClick={() => {
                           setEditingProduct(null);
                           setProductForm({
-                            name: '', category: 'perros', stage: 1, price: '', cost: '',
-                            stock: '', minStock: 10, description: '', image: ''
+                            name: '',
+                            category: 'perros',
+                            stage: 1,
+                            price: '',
+                            cost: '',
+                            stock: '',
+                            minStock: 10,
+                            description: '',
+                            image: ''
                           });
                         }}
                         className="px-3 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-bold text-xs"
@@ -4689,8 +4772,15 @@ export default function App() {
                     exportToExcelCSV(
                       `Cierre_Ventas_${closingDate}.csv`,
                       [
-                        'Factura', 'Fecha', 'Cliente', 'Direccion', 'Condicion',
-                        'Metodo Pago', 'Referencia', 'Total USD', 'Total Bs'
+                        'Factura',
+                        'Fecha',
+                        'Cliente',
+                        'Direccion',
+                        'Condicion',
+                        'Metodo Pago',
+                        'Referencia',
+                        'Total USD',
+                        'Total Bs'
                       ],
                       dailyClosingSales.map(s => [
                         s.invoiceNumber,
@@ -4776,6 +4866,7 @@ export default function App() {
                   )}
                 </div>
 
+                {/* FILTRO DE FACTURAS: CONTADO / CRÉDITO */}
                 <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-stone-200">
                   <span className="text-[11px] font-bold text-stone-500 mr-1">Filtrar por tipo:</span>
                   <button
@@ -5302,6 +5393,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* NUEVA SECCIÓN: CATEGORÍAS DEL MENÚ */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
@@ -5361,6 +5453,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* NUEVA SECCIÓN: RESPALDOS Y EXPORTACIÓN EXCEL */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4 md:col-span-2">
               <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
                 <Download className="w-5 h-5 text-amber-600" /> Respaldos y Exportación
@@ -5646,6 +5739,7 @@ export default function App() {
         </div>
       )}
 
+      {/* NUEVO MODAL: COBRO DE FACTURA A CRÉDITO */}
       {creditPaymentModal.isOpen && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[90vh] overflow-y-auto">
@@ -5852,6 +5946,7 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL: REVISAR FACTURA ANTES DE EMITIR */}
       {pendingInvoiceReview && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500 max-h-[92vh] overflow-y-auto">
@@ -5859,7 +5954,7 @@ export default function App() {
               <div className="text-2xl">🧾</div>
               <h3 className="text-lg font-black text-stone-900">REVISAR FACTURA ANTES DE EMITIR</h3>
               <p className="text-xs font-bold text-amber-700">
-                {pendingInvoiceReview.invoiceNumber} — {(pendingInvoiceReview.paymentCondition || 'contado').toUpperCase()}
+                {pendingInvoiceReview.invoiceNumber} — {pendingInvoiceReview.paymentCondition === 'credito' ? 'CRÉDITO' : 'CONTADO'}
               </p>
               <p className="text-[11px] text-stone-500">
                 Verifica todos los datos y aprueba o regresa para modificar
@@ -5870,7 +5965,7 @@ export default function App() {
               <div><strong>Cliente:</strong> {pendingInvoiceReview.customerName} ({pendingInvoiceReview.customerPhone})</div>
               <div><strong>📍 Dirección:</strong> {pendingInvoiceReview.deliveryAddress}</div>
               <div><strong>🛵 Ruta:</strong> {pendingInvoiceReview.deliveryZoneName} (${Number(pendingInvoiceReview.deliveryFee).toFixed(2)})</div>
-              <div><strong>💳 Pago:</strong> {pendingInvoiceReview.paymentMethod} ({(pendingInvoiceReview.paymentCondition || 'contado').toUpperCase()})</div>
+              <div><strong>💳 Pago:</strong> {pendingInvoiceReview.paymentMethod} ({pendingInvoiceReview.paymentCondition.toUpperCase()})</div>
               <div><strong>🔢 Ref:</strong> {pendingInvoiceReview.paymentDetails?.reference}</div>
               {pendingInvoiceReview.receiverSummary && (
                 <div className="text-emerald-800 font-bold">
@@ -5883,7 +5978,7 @@ export default function App() {
             </div>
 
             <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
-              {(Array.isArray(pendingInvoiceReview.items) ? pendingInvoiceReview.items : []).map((item, idx) => (
+              {pendingInvoiceReview.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span>{item.qty}x {item.name}</span>
                   <span className="font-bold">${item.subtotal.toFixed(2)}</span>
@@ -5921,6 +6016,7 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL: CATEGORÍA */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
@@ -5972,6 +6068,7 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL: COMPARTIR CUENTAS DE PAGO */}
       {showPaymentShareModal && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border-2 border-emerald-500 max-h-[90vh] overflow-y-auto">
@@ -6160,7 +6257,7 @@ export default function App() {
               </div>
               <div>
                 <strong>💳 Pago:</strong> {lastInvoiceModal.paymentMethod} (
-                {(lastInvoiceModal.paymentCondition || 'contado').toUpperCase()})
+                {lastInvoiceModal.paymentCondition.toUpperCase()})
               </div>
               <div>
                 <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
@@ -6178,7 +6275,7 @@ export default function App() {
             </div>
 
             <div className="space-y-1.5 text-xs border-b border-dashed border-stone-300 pb-3">
-              {(Array.isArray(lastInvoiceModal.items) ? lastInvoiceModal.items : []).map((item, idx) => (
+              {lastInvoiceModal.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between">
                   <span>
                     {item.qty}x {item.name}
@@ -6203,9 +6300,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${(Array.isArray(lastInvoiceModal.items) ? lastInvoiceModal.items : [])
+                  const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
                     .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee).toFixed(
+                    .join('\n')}\n🛵 Delivery: $${lastInvoiceModal.deliveryFee.toFixed(
                     2
                   )}\n*TOTAL: $${lastInvoiceModal.total.toFixed(2)} (Bs. ${Number(
                     lastInvoiceModal.totalBs
