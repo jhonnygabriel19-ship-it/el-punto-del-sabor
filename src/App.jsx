@@ -579,6 +579,7 @@ const INITIAL_SALES = [
 const CATEGORIES = [
   { id: 'todos', label: 'Todos' },
   { id: 'perros', label: '🌭 Perros Calientes' },
+  { id: 'extras', label: '🔥 Extras' },
   { id: 'combos', label: '🥤 Combos con Refresco' },
   { id: 'hamburguesas', label: '🍔 Hamburguesas' },
   { id: 'papas', label: '🍟 Papas Fritas' },
