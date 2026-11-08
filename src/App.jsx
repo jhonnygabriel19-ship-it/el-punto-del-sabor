@@ -2163,56 +2163,82 @@ useEffect(() => {
   };
 
   const handleExportFullBackupJSON = () => {
+  try {
     const backup = {
       businessName: 'El Punto del Sabor',
       exportedAt: new Date().toISOString(),
-      exchangeRate,
-      users,
-      products,
-      deliveryZones,
-      paymentMethods,
-      customers,
-      expenses,
-      sales,
-      supplyCatalog,
-      supplierCatalog
+      exchangeRate: typeof exchangeRate !== 'undefined' ? exchangeRate : 0,
+      users: typeof users !== 'undefined' ? users : [],
+      products: typeof products !== 'undefined' ? products : [],
+      deliveryZones: typeof deliveryZones !== 'undefined' ? deliveryZones : [],
+      paymentMethods: typeof paymentMethods !== 'undefined' ? paymentMethods : [],
+      customers: typeof customers !== 'undefined' ? customers : [], // Clientes incluidos
+      expenses: typeof expenses !== 'undefined' ? expenses : [],
+      sales: typeof sales !== 'undefined' ? sales : [], // Facturas/Ventas incluidas
+      supplyCatalog: typeof supplyCatalog !== 'undefined' ? supplyCatalog : [],
+      supplierCatalog: typeof supplierCatalog !== 'undefined' ? supplierCatalog : [],
+      categories: typeof categories !== 'undefined' ? categories : []
     };
+
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
+    link.setAttribute('download', `Respaldo_EPDS_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showNotification('Respaldo completo de la base de datos (.JSON) descargado.');
-  };
 
-  const handleImportFullBackupJSON = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    if (typeof showNotification === 'function') {
+      showNotification('✅ Respaldo completo descargado (Incluye Clientes y Facturas).');
+    }
+  } catch (error) {
+    console.error("Error al exportar:", error);
+    alert("❌ Error al exportar: " + error.message);
+  }
+};
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedData = JSON.parse(e.target.result);
-      
-        if (importedData.categories) setCategories(importedData.categories);
-        if (importedData.receivingAccounts) setReceivingAccounts(importedData.receivingAccounts);
-        if (importedData.products) setProducts(importedData.products);
-        if (importedData.deliveryZones) setDeliveryZones(importedData.deliveryZones);
-        if (importedData.paymentMethods) setPaymentMethods(importedData.paymentMethods);
-        if (importedData.customers) setCustomers(importedData.customers);
-        if (importedData.sales) setSales(importedData.sales);
-      
-        alert('✅ Base de datos restaurada correctamente desde el JSON.');
-      } catch (error) {
-        alert('❌ Error al leer el archivo. Asegúrate de que sea un respaldo .JSON válido.');
-        console.error(error);
-      }
-    };
-    reader.readAsText(file);
-  };
+  const handleImportBackupJSON = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  requestAuthorizedDelete(
+    'Restaurar Base de Datos (.JSON)',
+    '¿Estás seguro de que deseas cargar un archivo de respaldo? Esto REEMPLAZARÁ toda tu base de datos actual (inventario, clientes, ventas, etc.) con la del archivo.',
+    () => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.businessName === 'El Punto del Sabor') {
+            if (data.users) setUsers(data.users);
+            if (data.products) setProducts(data.products);
+            if (data.deliveryZones) setDeliveryZones(data.deliveryZones);
+            if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+            
+            // Inyección explícita de clientes y facturas
+            if (data.customers) setCustomers(data.customers);
+            if (data.sales) setSales(data.sales);
+            
+            if (data.expenses) setExpenses(data.expenses);
+            if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
+            if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
+            if (data.categories) setCategories(data.categories);
+            if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+            
+            showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
+          } else {
+             showNotification('❌ El archivo no es un respaldo válido de este sistema.', 'error');
+          }
+        } catch (error) {
+          showNotification('❌ Error al leer el archivo JSON. Asegúrate de que no esté corrupto.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+  );
+  e.target.value = null; 
+};
 
   const copyTextToClipboard = (text) => {
     try {
