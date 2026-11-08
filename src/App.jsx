@@ -2163,30 +2163,28 @@ useEffect(() => {
   };
 
   const handleExportFullBackupJSON = () => {
-    const backup = {
-      businessName: 'El Punto del Sabor',
-      exportedAt: new Date().toISOString(),
-      exchangeRate,
-      users,
-      products,
-      deliveryZones,
-      paymentMethods,
-      customers,
-      expenses,
-      sales,
-      supplyCatalog,
-      supplierCatalog
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification('Respaldo completo de la base de datos (.JSON) descargado.');
+  const backup = {
+    businessName: 'El Punto del Sabor',
+    exportedAt: new Date().toISOString(),
+    // Aseguramos que se incluyan absolutamente todas las variables:
+    categories: categories,
+    receivingAccounts: receivingAccounts,
+    products: products,
+    deliveryZones: deliveryZones,
+    paymentMethods: paymentMethods,
+    customers: customers,
+    sales: sales
   };
+  
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a'); 
+  link.href = url; 
+  link.setAttribute('download', `Respaldo_Sistema_EPDS.json`); 
+  document.body.appendChild(link); 
+  link.click(); 
+  document.body.removeChild(link);
+};
 
   const handleImportFullBackupJSON = (event) => {
     const file = event.target.files[0];
