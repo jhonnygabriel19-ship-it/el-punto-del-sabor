@@ -4835,8 +4835,6 @@ useEffect(() => {
                       />
                     </label>
                     {/* FIN DEL NUEVO BOTÓN */}
-
-                  </div>
                 </div>
               </div>
             </div>
