@@ -4834,6 +4834,7 @@ useEffect(() => {
                         onChange={handleImportFullBackupJSON}
                       />
                     </label>
+                    </div>
                 </div>
               </div>
             </div>
