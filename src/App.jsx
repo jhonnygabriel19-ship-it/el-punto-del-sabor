@@ -59,7 +59,7 @@ import {
 // INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
 // ========================================== 
 const appId = 'el-punto-del-sabor-app';
-let db = null;
+let db = getFirestore(firebaseApp);
 let auth = null;
 try {
   const firebaseConfig = {
