@@ -3550,10 +3550,11 @@ useEffect(() => {
                       className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
                     >
                       <option value={1}>Etapa 1 (Perros/Combos)</option>
-                      <option value={2}>Etapa 2 (Hamburguesas)</option>
-                      <option value={3}>Etapa 3 (Papas Fritas)</option>
-                      <option value={4}>Etapa 4 (Tequeños/Postres)</option>
-                      <option value={5}>Etapa 5 (Puesto Físico)</option>
+                      <option value={2}>Etapa 1 (Extras)</option>
+                      <option value={3}>Etapa 2 (Hamburguesas)</option>
+                      <option value={4}>Etapa 2 (Papas Fritas)</option>
+                      <option value={5}>Etapa 3 (Tequeños/Postres)</option>
+                      <option value={6}>Etapa 4 (Puesto Físico)</option>
                     </select>
                   </div>
                 </div>
