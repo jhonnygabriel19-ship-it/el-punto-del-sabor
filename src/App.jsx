@@ -71,7 +71,7 @@ try {
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = null;
+  db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
@@ -2224,7 +2224,7 @@ useEffect(() => {
               if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
               if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
               if (data.categories) setCategories(data.categories);
-              if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+              if (typeof data.exchangeRate !== 'undefined') setExchangeRate(data.exchangeRate);
               
               showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
             } else {
