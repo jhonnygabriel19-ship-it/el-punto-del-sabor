@@ -2199,46 +2199,45 @@ useEffect(() => {
   };
 
     const handleImportFullBackupJSON = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    requestAuthorizedDelete(
-      'Restaurar Base de Datos (.JSON)',
-      '¿Estás seguro de que deseas cargar un archivo de respaldo? Esto REEMPLAZARÁ toda tu base de datos actual (inventario, clientes, ventas, etc.) con la del archivo.',
-      () => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const data = JSON.parse(event.target.result);
-            if (data.businessName === 'El Punto del Sabor') {
-              if (data.users) setUsers(data.users);
-              if (data.products) setProducts(data.products);
-              if (data.deliveryZones) setDeliveryZones(data.deliveryZones);
-              if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
-              
-              // Inyección explícita de clientes y facturas
-              if (data.customers) setCustomers(data.customers);
-              if (data.sales) setSales(data.sales);
-              
-              if (data.expenses) setExpenses(data.expenses);
-              if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
-              if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
-              if (data.categories) setCategories(data.categories);
-              if (typeof data.exchangeRate !== 'undefined') setExchangeRate(data.exchangeRate);
-              
-              showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
-            } else {
-               showNotification('❌ El archivo no es un respaldo válido de este sistema.', 'error');
-            }
-          } catch (error) {
-            showNotification('❌ Error al leer el archivo JSON. Asegúrate de que no esté corrupto.', 'error');
-          }
-        };
-        reader.readAsText(file);
-      }
-    );
-    e.target.value = null; 
-  };
+  requestAuthorizedDelete(
+    'Restaurar Base de Datos (.JSON)',
+    '¿Estás seguro de que deseas cargar un archivo de respaldo? Esto REEMPLAZARÁ toda tu base de datos actual (inventario, clientes, ventas, etc.) con la del archivo.',
+    () => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          
+          // Eliminamos la validación "data.businessName === 'El Punto del Sabor'"
+          // Inyectamos directamente los datos encontrados
+          if (data.users) setUsers(data.users);
+          if (data.products) setProducts(data.products);
+          if (data.deliveryZones) setDeliveryZones(data.deliveryZones);
+          if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+          
+          // Inyección explícita de clientes y facturas
+          if (data.customers) setCustomers(data.customers);
+          if (data.sales) setSales(data.sales);
+          
+          if (data.expenses) setExpenses(data.expenses);
+          if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
+          if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
+          if (data.categories) setCategories(data.categories);
+          if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+          
+          showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
+        } catch (error) {
+          showNotification('❌ Error al leer el archivo JSON. Asegúrate de que no esté corrupto.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+  );
+  e.target.value = null; 
+};
 
   const copyTextToClipboard = (text) => {
     try {
