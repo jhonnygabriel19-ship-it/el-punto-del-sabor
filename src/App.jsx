@@ -55,21 +55,26 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-// ==========================================
-// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE)
-// ==========================================
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'el-punto-del-sabor-app';
+// ========================================== 
+// INICIALIZACIÓN DE BASE DE DATOS EN LA NUBE (FIRESTORE) 
+// ========================================== 
+const appId = 'el-punto-del-sabor-app';
 let db = null;
 let auth = null;
 try {
-  if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(firebaseApp);
-    auth = getAuth(firebaseApp);
-  }
+  const firebaseConfig = {
+    apiKey: "AIzaSyDKyi-0uuIY4fjDwkZ83xicc4ArTdGF6Gk",
+    authDomain: "el-punto-del-sabor-45b3d.firebaseapp.com",
+    projectId: "el-punto-del-sabor-45b3d",
+    storageBucket: "el-punto-del-sabor-45b3d.firebasestorage.app",
+    messagingSenderId: "501069850002",
+    appId: "1:501069850002:web:ee740ed897148e870e8d4b"
+  };
+  const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  db = null;
+  auth = getAuth(firebaseApp);
 } catch (err) {
-  console.warn('Usando almacenamiento local de respaldo:', err);
+  console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
 }
 
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
@@ -367,12 +372,12 @@ const INITIAL_DELIVERY_ZONES = [
 ];
 
 const INITIAL_PAYMENT_METHODS = [
-  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true },
-  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true },
-  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false },
-  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false },
-  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true },
-  { id: 'pm_6', name: 'Zelle', requiresReference: true }
+  { id: 'pm_1', name: 'Pago Móvil', requiresReference: true, details: '0414-0000000 | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_2', name: 'Binance (USDT)', requiresReference: true, details: 'pagos@elpuntodelsabor.com' },
+  { id: 'pm_3', name: 'Efectivo USD ($)', requiresReference: false, details: '' },
+  { id: 'pm_4', name: 'Efectivo Bolívares', requiresReference: false, details: '' },
+  { id: 'pm_5', name: 'Transferencia Bancaria', requiresReference: true, details: '0102-xxxx-xxxx-xxxx | V-12345678 | Banco de Venezuela' },
+  { id: 'pm_6', name: 'Zelle', requiresReference: true, details: 'zelle@elpuntodelsabor.com' }
 ];
 
 const INITIAL_CUSTOMERS = [
@@ -608,7 +613,7 @@ export default function App() {
   const [cloudReady, setCloudReady] = useState(false);
 
   const [users, setUsers] = useState(() => loadFromStorage('epds_users_v2', INITIAL_USERS));
-  const [currentUser, setCurrentUser] = useState(() => INITIAL_USERS[0]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loginUsername, setLoginUsername] = useState('Michelle Sifontes');
   const [loginPassword, setLoginPassword] = useState('21497110');
   const [loginError, setLoginError] = useState('');
@@ -724,86 +729,85 @@ export default function App() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // ==========================================
-  // CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE)
-  // ==========================================
-  useEffect(() => {
-    if (!auth) return;
-    let isMounted = true;
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) {
-        console.warn('Error de autenticación en nube:', e);
+// ========================================== 
+// AUTENTICACIÓN SILENCIOSA DE FIREBASE 
+// ========================================== 
+useEffect(() => {
+  if (!auth) return;
+  let isMounted = true;
+  const initAuth = async () => {
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
       }
-    };
-    initAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (isMounted && u) {
-        setFbUser(u);
-      }
-    });
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, []);
+    } catch (e) {
+      console.warn('Error de autenticación en nube:', e);
+    }
+  };
+  initAuth();
+  const unsub = onAuthStateChanged(auth, (u) => {
+    if (isMounted && u) {
+      setFbUser(u);
+    }
+  });
+  return () => {
+    isMounted = false;
+    unsub();
+  };
+}, []);
 
-  useEffect(() => {
-    if (!db || !fbUser) return;
-    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
-    const unsub = onSnapshot(
-      stateDocRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (Array.isArray(data.users) && data.users.length > 0) setUsers(data.users);
-          if (Array.isArray(data.products)) setProducts(data.products);
-          if (Array.isArray(data.deliveryZones) && data.deliveryZones.length > 0) setDeliveryZones(data.deliveryZones);
-          if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) setPaymentMethods(data.paymentMethods);
-          if (Array.isArray(data.customers)) setCustomers(data.customers);
-          if (Array.isArray(data.expenses)) setExpenses(data.expenses);
-          if (Array.isArray(data.sales)) setSales(data.sales);
-          if (Array.isArray(data.supplyCatalog) && data.supplyCatalog.length > 0) setSupplyCatalog(data.supplyCatalog);
-          if (Array.isArray(data.supplierCatalog) && data.supplierCatalog.length > 0) setSupplierCatalog(data.supplierCatalog);
-          if (data.securityDeletePin) setSecurityDeletePin(data.securityDeletePin);
-          if (data.businessWhatsApp) setBusinessWhatsApp(data.businessWhatsApp);
-          setCloudReady(true);
-        } else {
-          setDoc(
-            stateDocRef,
-            {
-              users,
-              products,
-              deliveryZones,
-              paymentMethods,
-              customers,
-              expenses,
-              sales,
-              supplyCatalog,
-              supplierCatalog,
-              securityDeletePin,
-              businessWhatsApp,
-              updatedAt: new Date().toISOString()
-            },
-            { merge: true }
-          )
-            .then(() => setCloudReady(true))
-            .catch(() => setCloudReady(true));
-        }
-      },
-      (err) => {
-        console.warn('Error leyendo estado en la nube:', err);
+// ========================================== 
+// CONEXIÓN Y SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE (NUBE) 
+// ========================================== 
+// Escuchar cambios desde la base de datos en la nube para no perder ningún registro
+useEffect(() => {
+  if (!db || !fbUser) return;
+  const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
+  const unsub = onSnapshot(
+    stateDocRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        
+        // 🛑 FRENO AL BUCLE INFINITO: Solo actualiza si la nube tiene datos realmente distintos
+        if (Array.isArray(data.users)) setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
+        if (Array.isArray(data.products)) setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
+        if (Array.isArray(data.deliveryZones)) setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
+        if (Array.isArray(data.paymentMethods)) setPaymentMethods(prev => JSON.stringify(prev) === JSON.stringify(data.paymentMethods) ? prev : data.paymentMethods);
+        if (Array.isArray(data.customers)) setCustomers(prev => JSON.stringify(prev) === JSON.stringify(data.customers) ? prev : data.customers);
+        if (Array.isArray(data.expenses)) setExpenses(prev => JSON.stringify(prev) === JSON.stringify(data.expenses) ? prev : data.expenses);
+        if (Array.isArray(data.sales)) setSales(prev => JSON.stringify(prev) === JSON.stringify(data.sales) ? prev : data.sales);
+        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplyCatalog) ? prev : data.supplyCatalog);
+        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplierCatalog) ? prev : data.supplierCatalog);
+        
+        if (data.securityDeletePin) setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
+        if (data.businessWhatsApp) setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
+        
+        setCloudReady(true);
+      } else {
+        // Inicializar documento en la nube
+        setDoc(
+          stateDocRef,
+          {
+            users, products, deliveryZones, paymentMethods, customers, expenses, sales, supplyCatalog, supplierCatalog, securityDeletePin, businessWhatsApp,
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        )
+          .then(() => setCloudReady(true))
+          .catch(() => setCloudReady(true));
       }
-    );
-    return () => unsub();
-  }, [fbUser]);
+    },
+    (err) => {
+      console.warn('Error leyendo estado en la nube:', err);
+    }
+  );
+  return () => unsub();
+}, [fbUser]);
 
-  const persistToCloud = async (partialData) => {
+    const persistToCloud = async (partialData) => {
     if (!db || !fbUser) return;
     try {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
@@ -816,7 +820,8 @@ export default function App() {
         { merge: true }
       );
     } catch (e) {
-      console.warn('No se pudo sincronizar cambio en la nube:', e);
+      console.error('No se pudo sincronizar cambio en la nube:', e);
+      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
     }
   };
 
@@ -2429,20 +2434,15 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadCustomerMenuPDF}
-                className="px-3 py-2 rounded-xl bg-stone-950 hover:bg-stone-800 text-amber-400 text-xs font-extrabold flex items-center gap-1.5 shadow"
-              >
-                <FileDown className="w-4 h-4" /> Descargar Menú PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCustomerPublicView(false)}
-                className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 text-xs font-black shadow"
-              >
-                ← Volver al Panel Administrativo
-              </button>
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomerPublicView(false)}
+                  className="px-3 py-2 rounded-xl bg-white/90 hover:bg-white text-stone-900 text-xs font-black shadow"
+                >
+                  ← Volver al Panel Administrativo
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -2803,7 +2803,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setLoginUsername(u.username);
-                      setLoginPassword(u.password);
+                      setLoginPassword('');
                       setLoginError('');
                     }}
                     className={`p-2.5 rounded-xl border text-left transition ${
@@ -2813,7 +2813,7 @@ export default function App() {
                     }`}
                   >
                     <div className="text-xs font-extrabold">{u.username}</div>
-                    <div className="text-[10px] text-stone-500">Clave: {u.password}</div>
+                    <div className="text-[10px] text-stone-500">{u.role}</div>
                   </button>
                 ))}
               </div>
@@ -4823,6 +4823,17 @@ export default function App() {
                   >
                     <Download className="w-4 h-4" /> Descargar Base de Datos (.JSON)
                   </button>
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-stone-900">
+                    <h3 className="font-bold text-sm mb-2 text-amber-900">Restaurar Sistema (Importar)</h3>
+                    <label className="w-full px-4 py-3 rounded-2xl bg-amber-500 text-stone-950 font-black text-xs shadow flex justify-center gap-2 cursor-pointer">
+                      <Upload className="w-4 h-4" /> 2. Restaurar Sistema (.JSON)
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={handleImportFullBackupJSON}
+                      />
+                    </label>
                 </div>
               </div>
             </div>
