@@ -2198,7 +2198,7 @@ useEffect(() => {
     }
   };
 
-    const handleImportBackupJSON = (e) => {
+    const handleImportFullBackupJSON = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -2215,17 +2215,17 @@ useEffect(() => {
               if (data.products) setProducts(data.products);
               if (data.deliveryZones) setDeliveryZones(data.deliveryZones);
               if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
-            
+              
               // Inyección explícita de clientes y facturas
               if (data.customers) setCustomers(data.customers);
               if (data.sales) setSales(data.sales);
-            
+              
               if (data.expenses) setExpenses(data.expenses);
               if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
               if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
               if (data.categories) setCategories(data.categories);
               if (data.exchangeRate) setExchangeRate(data.exchangeRate);
-            
+              
               showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
             } else {
                showNotification('❌ El archivo no es un respaldo válido de este sistema.', 'error');
