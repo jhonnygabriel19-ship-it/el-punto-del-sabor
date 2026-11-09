@@ -71,7 +71,7 @@ try {
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = getAuth(firebaseApp);
+  db = null;
   auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
