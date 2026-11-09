@@ -2202,7 +2202,7 @@ const persistToCloud = async (partialData) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Respaldo_EPDS_${new Date().toISOString().split('T')[0]}.json`);
+      link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
