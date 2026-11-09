@@ -71,7 +71,7 @@ try {
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = null;
+  db = getFirestore(firebaseApp);
   auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
@@ -772,27 +772,44 @@ useEffect(() => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         
-        // 🛑 FRENO AL BUCLE INFINITO: Solo actualiza si la nube tiene datos realmente distintos
-        if (Array.isArray(data.users)) setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
-        if (Array.isArray(data.products)) setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
-        if (Array.isArray(data.deliveryZones)) setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
-        if (Array.isArray(data.paymentMethods)) setPaymentMethods(prev => JSON.stringify(prev) === JSON.stringify(data.paymentMethods) ? prev : data.paymentMethods);
-        if (Array.isArray(data.customers)) setCustomers(prev => JSON.stringify(prev) === JSON.stringify(data.customers) ? prev : data.customers);
-        if (Array.isArray(data.expenses)) setExpenses(prev => JSON.stringify(prev) === JSON.stringify(data.expenses) ? prev : data.expenses);
-        if (Array.isArray(data.sales)) setSales(prev => JSON.stringify(prev) === JSON.stringify(data.sales) ? prev : data.sales);
-        if (Array.isArray(data.supplyCatalog)) setSupplyCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplyCatalog) ? prev : data.supplyCatalog);
-        if (Array.isArray(data.supplierCatalog)) setSupplierCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplierCatalog) ? prev : data.supplierCatalog);
+        // 🛑 FRENO AL BUCLE INFINITO BLINDADO: 
+        // Compara los datos antes de actualizar y verifica que la función exista.
+        if (data.users && typeof setUsers === 'function') setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
+        if (data.products && typeof setProducts === 'function') setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
+        if (data.deliveryZones && typeof setDeliveryZones === 'function') setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
+        if (data.paymentMethods && typeof setPaymentMethods === 'function') setPaymentMethods(prev => JSON.stringify(prev) === JSON.stringify(data.paymentMethods) ? prev : data.paymentMethods);
+        if (data.customers && typeof setCustomers === 'function') setCustomers(prev => JSON.stringify(prev) === JSON.stringify(data.customers) ? prev : data.customers);
+        if (data.expenses && typeof setExpenses === 'function') setExpenses(prev => JSON.stringify(prev) === JSON.stringify(data.expenses) ? prev : data.expenses);
+        if (data.sales && typeof setSales === 'function') setSales(prev => JSON.stringify(prev) === JSON.stringify(data.sales) ? prev : data.sales);
+        if (data.supplyCatalog && typeof setSupplyCatalog === 'function') setSupplyCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplyCatalog) ? prev : data.supplyCatalog);
+        if (data.supplierCatalog && typeof setSupplierCatalog === 'function') setSupplierCatalog(prev => JSON.stringify(prev) === JSON.stringify(data.supplierCatalog) ? prev : data.supplierCatalog);
         
-        if (data.securityDeletePin) setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
-        if (data.businessWhatsApp) setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
+        // NUEVAS VARIABLES INTEGRADAS AL SINCRONIZADOR
+        if (data.categories && typeof setCategories === 'function') setCategories(prev => JSON.stringify(prev) === JSON.stringify(data.categories) ? prev : data.categories);
+        if (data.receivingAccounts && typeof setReceivingAccounts === 'function') setReceivingAccounts(prev => JSON.stringify(prev) === JSON.stringify(data.receivingAccounts) ? prev : data.receivingAccounts);
+        
+        if (typeof data.securityDeletePin !== 'undefined' && typeof setSecurityDeletePin === 'function') setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
+        if (typeof data.businessWhatsApp !== 'undefined' && typeof setBusinessWhatsApp === 'function') setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
         
         setCloudReady(true);
       } else {
-        // Inicializar documento en la nube
+        // Inicialización segura de documento en la nube
         setDoc(
           stateDocRef,
           {
-            users, products, deliveryZones, paymentMethods, customers, expenses, sales, supplyCatalog, supplierCatalog, securityDeletePin, businessWhatsApp,
+            users: typeof users !== 'undefined' ? users : [],
+            products: typeof products !== 'undefined' ? products : [],
+            deliveryZones: typeof deliveryZones !== 'undefined' ? deliveryZones : [],
+            paymentMethods: typeof paymentMethods !== 'undefined' ? paymentMethods : [],
+            customers: typeof customers !== 'undefined' ? customers : [],
+            expenses: typeof expenses !== 'undefined' ? expenses : [],
+            sales: typeof sales !== 'undefined' ? sales : [],
+            supplyCatalog: typeof supplyCatalog !== 'undefined' ? supplyCatalog : [],
+            supplierCatalog: typeof supplierCatalog !== 'undefined' ? supplierCatalog : [],
+            categories: typeof categories !== 'undefined' ? categories : [],
+            receivingAccounts: typeof receivingAccounts !== 'undefined' ? receivingAccounts : [],
+            securityDeletePin: typeof securityDeletePin !== 'undefined' ? securityDeletePin : '',
+            businessWhatsApp: typeof businessWhatsApp !== 'undefined' ? businessWhatsApp : '',
             updatedAt: new Date().toISOString()
           },
           { merge: true }
@@ -2184,7 +2201,7 @@ useEffect(() => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
+      link.setAttribute('download', `Respaldo_EPDS_${new Date().toISOString().split('T')[0]}.json`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
