@@ -410,7 +410,7 @@ const INITIAL_CUSTOMERS = [
 const INITIAL_EXPENSES = [
   {
     id: 'exp_1',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISOString().split('T')[0],
     type: 'inversion',
     category: 'Baño María y Utensilios Térmicos',
     description: 'Baño María acero inoxidable, pinzas, envases térmicos para delivery y bombona',
@@ -421,7 +421,7 @@ const INITIAL_EXPENSES = [
   },
   {
     id: 'exp_2',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISOString().split('T')[0],
     type: 'insumo',
     category: 'Pan de Perro y Salchichas Viena/Polaca',
     description: 'Compra inicial: 100 panes de perro, 100 salchichas viena y 30 polacas',
@@ -432,7 +432,7 @@ const INITIAL_EXPENSES = [
   },
   {
     id: 'exp_3',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISOString().split('T')[0],
     type: 'insumo',
     category: 'Salsas, Queso Amarillo y Papitas',
     description: 'Galones de salsa de tomate, mayonesa, mostaza, 3kg queso amarillo y 2kg papitas',
@@ -443,7 +443,7 @@ const INITIAL_EXPENSES = [
   },
   {
     id: 'exp_4',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISOString().split('T')[0],
     type: 'insumo',
     category: 'Cajas Térmicas y Bolsas Delivery',
     description: '150 cajas térmicas porta-perros, bolsas kraft y servilletas',
@@ -482,8 +482,8 @@ const INITIAL_SALES = [
   {
     id: 'sale_init_1',
     invoiceNumber: 'EPDS-1001',
-    date: new Date().toISOString().split('T')[0],
-    timestamp: new Date().toISOString(),
+    date: getLocalISOString().split('T')[0],
+    timestamp: getLocalISOString(),
     cashier: 'Michelle Sifontes',
     customerId: 'cli_1',
     customerName: 'Carlos Mendoza',
@@ -534,8 +534,8 @@ const INITIAL_SALES = [
   {
     id: 'sale_init_2',
     invoiceNumber: 'EPDS-CR-0001',
-    date: new Date().toISOString().split('T')[0],
-    timestamp: new Date().toISOString(),
+    date: getLocalISOString().split('T')[0],
+    timestamp: getLocalISOString(),
     cashier: 'Jhonny Rivas',
     customerId: 'cli_2',
     customerName: 'María Fernanda Gómez',
@@ -811,7 +811,7 @@ useEffect(() => {
             exchangeRate: typeof exchangeRate !== 'undefined' ? exchangeRate : 0,
             securityDeletePin: typeof securityDeletePin !== 'undefined' ? securityDeletePin : '',
             businessWhatsApp: typeof businessWhatsApp !== 'undefined' ? businessWhatsApp : '',
-            updatedAt: new Date().toISOString()
+            updatedAt: getLocalISOString()
           },
           { merge: true }
         )
@@ -834,7 +834,7 @@ const persistToCloud = async (partialData) => {
       stateDocRef,
       {
         ...partialData,
-        updatedAt: new Date().toISOString()
+        updatedAt: getLocalISOString()
       },
       { merge: true }
     );
@@ -1063,7 +1063,7 @@ const persistToCloud = async (partialData) => {
   });
 
   const [expenseForm, setExpenseForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISOString().split('T')[0],
     type: 'insumo',
     category: '',
     description: '',
@@ -1091,7 +1091,7 @@ const persistToCloud = async (partialData) => {
     return supplierCatalog.filter(sup => sup.toLowerCase().includes(q));
   }, [supplierCatalog, expenseForm.supplier]);
 
-  const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [closingDate, setClosingDate] = useState(getLocalISOString().split('T')[0]);
   const [passwordChangeForm, setPasswordChangeForm] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -1719,7 +1719,7 @@ const persistToCloud = async (partialData) => {
       showNotification('Ingresa el número de referencia del pago.', 'error');
       return;
     }
-    const paidAt = new Date().toISOString();
+    const paidAt = getLocalISOString();
     setSales(prev =>
       prev.map(s =>
         s.id === creditPaymentModal.saleId
@@ -1747,7 +1747,7 @@ const persistToCloud = async (partialData) => {
   };
 
   const handleMarkCreditPaid = (saleId, method = 'Pago Móvil', ref = 'Cobrado') => {
-    const paidAt = new Date().toISOString();
+    const paidAt = getLocalISOString();
     setSales(prev =>
       prev.map(s =>
         s.id === saleId
@@ -1797,8 +1797,8 @@ const persistToCloud = async (partialData) => {
     const newInvoice = {
       id: `sale_${Date.now()}`,
       invoiceNumber: getNextInvoiceNumber(paymentCondition),
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString(),
+      date: getLocalISOString().split('T')[0],
+      timestamp: getLocalISOString(),
       cashier: currentUser.username,
       customerId: customerObj.id,
       customerName: customerObj.name,
@@ -2050,7 +2050,7 @@ const persistToCloud = async (partialData) => {
 
     setExpenses(prev => [exp, ...prev]);
     setExpenseForm({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalISOString().split('T')[0],
       type: 'insumo',
       category: '',
       description: '',
@@ -2184,7 +2184,7 @@ const persistToCloud = async (partialData) => {
     try {
         const backup = {
         businessName: 'El Punto del Sabor',
-        exportedAt: new Date().toISOString(),
+        exportedAt: getLocalISOString(),
         exchangeRate: typeof exchangeRate !== 'undefined' ? exchangeRate : 0,
         users: typeof users !== 'undefined' ? users : [],
         products: typeof products !== 'undefined' ? products : [],
@@ -2202,7 +2202,7 @@ const persistToCloud = async (partialData) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${new Date().toISOString().split('T')[0]}.json`);
+      link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${getLocalISOString().split('T')[0]}.json`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2301,8 +2301,8 @@ const persistToCloud = async (partialData) => {
     const demoSale = {
       id: `sale_${Date.now()}`,
       invoiceNumber: getNextInvoiceNumber('contado'),
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString(),
+      date: getLocalISOString().split('T')[0],
+      timestamp: getLocalISOString(),
       cashier: currentUser?.username || 'Michelle Sifontes',
       customerId: customers[0]?.id || 'cli_1',
       customerName: customers[0]?.name || 'Cliente Prueba',
