@@ -2199,45 +2199,45 @@ useEffect(() => {
   };
 
     const handleImportFullBackupJSON = (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-  requestAuthorizedDelete(
-    'Restaurar Base de Datos (.JSON)',
-    '¿Estás seguro de que deseas cargar un archivo de respaldo? Esto REEMPLAZARÁ toda tu base de datos actual (inventario, clientes, ventas, etc.) con la del archivo.',
-    () => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target.result);
+      requestAuthorizedDelete(
+        'Restaurar Base de Datos (.JSON)',
+        '¿Estás seguro de que deseas cargar un archivo de respaldo? Esto REEMPLAZARÁ toda tu base de datos actual (inventario, clientes, ventas, etc.) con la del archivo.',
+        () => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const data = JSON.parse(event.target.result);
           
-          // Eliminamos la validación "data.businessName === 'El Punto del Sabor'"
-          // Inyectamos directamente los datos encontrados
-          if (data.users) setUsers(data.users);
-          if (data.products) setProducts(data.products);
-          if (data.deliveryZones) setDeliveryZones(data.deliveryZones);
-          if (data.paymentMethods) setPaymentMethods(data.paymentMethods);
+              // Blindaje: Solo inyecta el dato si la variable de estado realmente existe en el código
+              if (data.users && typeof setUsers === 'function') setUsers(data.users);
+              if (data.products && typeof setProducts === 'function') setProducts(data.products);
+              if (data.deliveryZones && typeof setDeliveryZones === 'function') setDeliveryZones(data.deliveryZones);
+              if (data.paymentMethods && typeof setPaymentMethods === 'function') setPaymentMethods(data.paymentMethods);
           
-          // Inyección explícita de clientes y facturas
-          if (data.customers) setCustomers(data.customers);
-          if (data.sales) setSales(data.sales);
+              // Inyección segura de clientes y facturas
+              if (data.customers && typeof setCustomers === 'function') setCustomers(data.customers);
+              if (data.sales && typeof setSales === 'function') setSales(data.sales);
           
-          if (data.expenses) setExpenses(data.expenses);
-          if (data.supplyCatalog) setSupplyCatalog(data.supplyCatalog);
-          if (data.supplierCatalog) setSupplierCatalog(data.supplierCatalog);
-          if (data.categories) setCategories(data.categories);
-          if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+              if (data.expenses && typeof setExpenses === 'function') setExpenses(data.expenses);
+              if (data.supplyCatalog && typeof setSupplyCatalog === 'function') setSupplyCatalog(data.supplyCatalog);
+              if (data.supplierCatalog && typeof setSupplierCatalog === 'function') setSupplierCatalog(data.supplierCatalog);
+              if (data.categories && typeof setCategories === 'function') setCategories(data.categories);
+              if (typeof data.exchangeRate !== 'undefined' && typeof setExchangeRate === 'function') setExchangeRate(data.exchangeRate);
           
-          showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
-        } catch (error) {
-          showNotification('❌ Error al leer el archivo JSON. Asegúrate de que no esté corrupto.', 'error');
+              showNotification('✅ Base de datos restaurada. Clientes y facturas actualizados.');
+            } catch (error) {
+              console.error("Error interno detectado durante la importación:", error);
+              showNotification('❌ Error al procesar el archivo. Revisa la consola (F12) para más detalles.', 'error');
+            }
+          };
+          reader.readAsText(file);
         }
-      };
-      reader.readAsText(file);
-    }
-  );
-  e.target.value = null; 
-};
+      );
+      e.target.value = null; 
+    };
 
   const copyTextToClipboard = (text) => {
     try {
