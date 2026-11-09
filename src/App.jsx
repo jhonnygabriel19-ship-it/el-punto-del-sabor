@@ -77,6 +77,13 @@ try {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
 }
 
+// Función para obtener la hora local exacta (Solución de Zona Horaria)
+const getLocalISOString = () => {
+  const date = new Date();
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, -1); 
+};
+
 // Helper para dividir texto automáticamente respetando márgenes en Canvas (PDF e Imagen)
 function wrapCanvasText(ctx, text, maxWidth) {
   const words = String(text || '').split(' ');
@@ -773,6 +780,7 @@ useEffect(() => {
         const data = snapshot.data();
         
         // 🛑 FRENO AL BUCLE INFINITO BLINDADO: 
+        // Compara los datos antes de actualizar y verifica que la función exista.
         if (data.users && typeof setUsers === 'function') setUsers(prev => JSON.stringify(prev) === JSON.stringify(data.users) ? prev : data.users);
         if (data.products && typeof setProducts === 'function') setProducts(prev => JSON.stringify(prev) === JSON.stringify(data.products) ? prev : data.products);
         if (data.deliveryZones && typeof setDeliveryZones === 'function') setDeliveryZones(prev => JSON.stringify(prev) === JSON.stringify(data.deliveryZones) ? prev : data.deliveryZones);
@@ -786,7 +794,6 @@ useEffect(() => {
         // NUEVAS VARIABLES INTEGRADAS AL SINCRONIZADOR
         if (data.categories && typeof setCategories === 'function') setCategories(prev => JSON.stringify(prev) === JSON.stringify(data.categories) ? prev : data.categories);
         if (data.receivingAccounts && typeof setReceivingAccounts === 'function') setReceivingAccounts(prev => JSON.stringify(prev) === JSON.stringify(data.receivingAccounts) ? prev : data.receivingAccounts);
-        if (typeof data.exchangeRate !== 'undefined' && typeof setExchangeRate === 'function') setExchangeRate(prev => JSON.stringify(prev) === JSON.stringify(data.exchangeRate) ? prev : data.exchangeRate);
         
         if (typeof data.securityDeletePin !== 'undefined' && typeof setSecurityDeletePin === 'function') setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
         if (typeof data.businessWhatsApp !== 'undefined' && typeof setBusinessWhatsApp === 'function') setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
@@ -808,7 +815,6 @@ useEffect(() => {
             supplierCatalog: typeof supplierCatalog !== 'undefined' ? supplierCatalog : [],
             categories: typeof categories !== 'undefined' ? categories : [],
             receivingAccounts: typeof receivingAccounts !== 'undefined' ? receivingAccounts : [],
-            exchangeRate: typeof exchangeRate !== 'undefined' ? exchangeRate : 0,
             securityDeletePin: typeof securityDeletePin !== 'undefined' ? securityDeletePin : '',
             businessWhatsApp: typeof businessWhatsApp !== 'undefined' ? businessWhatsApp : '',
             updatedAt: getLocalISOString()
@@ -826,23 +832,23 @@ useEffect(() => {
   return () => unsub();
 }, [fbUser]);
 
-const persistToCloud = async (partialData) => {
-  if (!db || !fbUser) return;
-  try {
-    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
-    await setDoc(
-      stateDocRef,
-      {
-        ...partialData,
-        updatedAt: getLocalISOString()
-      },
-      { merge: true }
-    );
-  } catch (e) {
-    console.error('No se pudo sincronizar cambio en la nube:', e);
-    showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
-  }
-};
+    const persistToCloud = async (partialData) => {
+    if (!db || !fbUser) return;
+    try {
+      const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
+      await setDoc(
+        stateDocRef,
+        {
+          ...partialData,
+          updatedAt: getLocalISOString()
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error('No se pudo sincronizar cambio en la nube:', e);
+      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
+    }
+  };
 
   useEffect(() => {
     try { localStorage.setItem('epds_users_v2', JSON.stringify(users)); } catch (e) {}
