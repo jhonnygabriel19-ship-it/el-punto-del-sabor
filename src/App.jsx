@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ShoppingBag,
   Utensils,
@@ -614,6 +614,11 @@ function loadFromStorage(key, fallback) {
 }
 
 export default function App() {
+
+// Variable para el Debounce de Firebase
+const cloudSaveTimeout = useRef(null);
+const pendingCloudData = useRef({});
+  
   // ==========================================
   // ESTADOS PRINCIPALES Y PERSISTENCIA EN NUBE + LOCAL
   // ==========================================
@@ -832,24 +837,50 @@ useEffect(() => {
   return () => unsub();
 }, [fbUser]);
 
-    const persistToCloud = async (partialData) => {
-    if (!db || !fbUser) return;
+// ==========================================
+// Función central para persistir con DEBOUNCE (Agrupar llamadas a Firebase)
+// ==========================================
+const persistToCloud = async (partialData) => {
+  if (!db || !fbUser) return;
+  
+  // 1. Acumular los nuevos datos con los que ya estaban pendientes
+  pendingCloudData.current = {
+    ...pendingCloudData.current,
+    ...partialData
+  };
+
+  // 2. Limpiar cualquier guardado que estuviera en cuenta regresiva
+  if (cloudSaveTimeout.current) {
+    clearTimeout(cloudSaveTimeout.current);
+  }
+
+  // 3. Iniciar una nueva cuenta regresiva de 2 segundos (2000 ms)
+  cloudSaveTimeout.current = setTimeout(async () => {
     try {
       const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'epds_store', 'main_state');
+      
+      // Guardar todo el paquete acumulado de una sola vez
       await setDoc(
         stateDocRef,
         {
-          ...partialData,
-          updatedAt: getLocalISOString()
+          ...pendingCloudData.current,
+          updatedAt: getLocalISOString() // Usa tu función de hora corregida
         },
         { merge: true }
       );
+      
+      // Limpiar el acumulador después de un guardado exitoso
+      pendingCloudData.current = {};
+      
     } catch (e) {
       console.error('No se pudo sincronizar cambio en la nube:', e);
-      showNotification('Error al guardar en la nube. Revisa tu conexión o los permisos de Firestore.', 'error');
     }
-  };
+  }, 2000); 
+};
 
+// ==========================================
+// (Aquí continúan tus useEffect de autoguardado sin modificaciones)
+// ==========================================
   useEffect(() => {
     try { localStorage.setItem('epds_users_v2', JSON.stringify(users)); } catch (e) {}
     if (cloudReady) persistToCloud({ users });
