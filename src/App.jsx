@@ -2904,8 +2904,8 @@ const persistToCloud = async (partialData) => {
       <header className="bg-stone-900 text-white shadow-lg sticky top-0 z-30 print:hidden">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-red-600 flex items-center justify-center text-2xl shadow-md">
-              🌭
+            <div className="w-11 h-11 rounded-2xl bg-stone-950 flex items-center justify-center shadow-md overflow-hidden">
+              <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="flex items-center gap-2">
