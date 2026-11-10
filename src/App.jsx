@@ -1063,6 +1063,7 @@ const persistToCloud = async (partialData) => {
           setProductForm({
             name: '',
             category: 'perros',
+            orden: '', // <--- AGREGA ESTA LÍNEA PARA LIMPIAR LA POSICIÓN
             stage: 1,
             price: '',
             cost: '',
@@ -1092,6 +1093,7 @@ const persistToCloud = async (partialData) => {
   const [productForm, setProductForm] = useState({
     name: '',
     category: 'perros',
+    orden: '', // <--- AQUÍ SE AGREGA LA NUEVA LÍNEA
     stage: 1,
     price: '',
     cost: '',
@@ -1102,7 +1104,7 @@ const persistToCloud = async (partialData) => {
   });
 
   const [expenseForm, setExpenseForm] = useState({
-    date: getLocalISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0],
     type: 'insumo',
     category: '',
     description: '',
@@ -3575,37 +3577,6 @@ if (isCustomerPublicView) {
                       <option value={5}>Etapa 3 (Tequeños/Postres)</option>
                       <option value={6}>Etapa 4 (Puesto Físico)</option>
                     </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Precio Venta ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productForm.price}
-                      onChange={e => setProductForm({ ...productForm, price: e.target.value })}
-                      placeholder="2.50"
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Costo Receta ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productForm.cost}
-                      onChange={e => setProductForm({ ...productForm, cost: e.target.value })}
-                      placeholder="1.10"
-                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
-                      required
-                    />
                   </div>
                 </div>
 
