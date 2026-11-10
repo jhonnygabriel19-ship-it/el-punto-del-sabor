@@ -1995,14 +1995,14 @@ const persistToCloud = async (partialData) => {
 
     // 1. AL ACTUALIZAR UN PRODUCTO EXISTENTE
     if (editingProduct) {
-      setProducts(prev =>
-        prev.map(p =>
+      setProducts(prev => {
+        const updated = prev.map(p =>
           p.id === editingProduct.id
             ? {
                 ...p,
                 name: productForm.name.trim(),
                 category: productForm.category,
-                orden: Number(productForm.orden) || 999, // <--- NUEVA LÍNEA
+                orden: Number(productForm.orden) || 999, // <--- GARANTIZA EL ORDEN
                 stage: Number(productForm.stage || 1),
                 price: Number(productForm.price),
                 cost: Number(productForm.cost || 0),
@@ -2012,8 +2012,12 @@ const persistToCloud = async (partialData) => {
                 image: productForm.image.trim() || fallbackImg
               }
             : p
-        )
-      );
+        );
+        // FORZAMOS LA SINCRONIZACIÓN INMEDIATA
+        try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
+        if (typeof persistToCloud === 'function') persistToCloud({ products: updated });
+        return updated;
+      });
       showNotification(`Producto "${productForm.name}" actualizado.`);
     
     // 2. AL CREAR UN PRODUCTO NUEVO
@@ -2022,7 +2026,7 @@ const persistToCloud = async (partialData) => {
         id: `prod_${Date.now()}`,
         name: productForm.name.trim(),
         category: productForm.category,
-        orden: Number(productForm.orden) || 999, // <--- NUEVA LÍNEA
+        orden: Number(productForm.orden) || 999, // <--- GARANTIZA EL ORDEN
         stage: Number(productForm.stage || 1),
         price: Number(productForm.price),
         cost: Number(productForm.cost || 0),
@@ -2032,7 +2036,14 @@ const persistToCloud = async (partialData) => {
         description: productForm.description.trim() || 'Especialidad de El Punto del Sabor',
         image: productForm.image.trim() || fallbackImg
       };
-      setProducts(prev => [newProd, ...prev]);
+      
+      setProducts(prev => {
+        const updated = [newProd, ...prev];
+        // FORZAMOS LA SINCRONIZACIÓN INMEDIATA
+        try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
+        if (typeof persistToCloud === 'function') persistToCloud({ products: updated });
+        return updated;
+      });
       showNotification(`Producto "${newProd.name}" agregado al menú.`);
     }
 
@@ -2041,8 +2052,8 @@ const persistToCloud = async (partialData) => {
     // 3. PARA LIMPIAR EL FORMULARIO DESPUÉS DE GUARDAR
     setProductForm({
       name: '',
-      category: categories.length > 0 ? categories[0].id : 'perros',
-      orden: '', // <--- NUEVA LÍNEA
+      category: typeof categories !== 'undefined' && categories.length > 0 ? categories[0].id : 'perros',
+      orden: '', // <--- GARANTIZA QUE EL CAMPO QUEDE LIMPIO AL TERMINAR
       stage: 1,
       price: '',
       cost: '',
@@ -2051,7 +2062,6 @@ const persistToCloud = async (partialData) => {
       description: '',
       image: ''
     });
-  };
 
   const handleSelectSupplyFromMemory = (item) => {
     setExpenseForm(prev => ({
