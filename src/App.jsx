@@ -5745,3 +5745,9 @@ if (isCustomerPublicView) {
               </div>
             )}
             {/* FIN DE LOS NUEVOS BOTONES */}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
