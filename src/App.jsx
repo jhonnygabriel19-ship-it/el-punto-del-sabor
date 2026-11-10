@@ -2015,11 +2015,11 @@ const persistToCloud = async (partialData) => {
         );
         // FORZAMOS LA SINCRONIZACIÓN CON LA FUNCIÓN CORRECTA DE TU SISTEMA
         try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
-        saveToCloud("products", updated); // <--- CORRECCIÓN CLAVE AQUÍ
+        persistToCloud({ products: updated }); // <--- RESTAURADA LA FUNCIÓN REAL
         return updated;
       });
       showNotification(`Producto "${productForm.name}" actualizado.`);
-    
+
     // 2. AL CREAR UN PRODUCTO NUEVO
     } else {
       const newProd = {
@@ -2036,19 +2036,19 @@ const persistToCloud = async (partialData) => {
         description: productForm.description.trim() || 'Especialidad de El Punto del Sabor',
         image: productForm.image.trim() || fallbackImg
       };
-      
+
       setProducts(prev => {
         const updated = [newProd, ...prev];
         // FORZAMOS LA SINCRONIZACIÓN CON LA FUNCIÓN CORRECTA DE TU SISTEMA
         try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
-        saveToCloud("products", updated); // <--- CORRECCIÓN CLAVE AQUÍ
+        persistToCloud({ products: updated }); // <--- RESTAURADA LA FUNCIÓN REAL
         return updated;
       });
       showNotification(`Producto "${newProd.name}" agregado al menú.`);
     }
 
     setEditingProduct(null);
-    
+
     // 3. PARA LIMPIAR EL FORMULARIO DESPUÉS DE GUARDAR
     setProductForm({
       name: '',
