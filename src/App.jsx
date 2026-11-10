@@ -3346,16 +3346,34 @@ if (isCustomerPublicView) {
                           </label>
                           <select
                             value={selectedPaymentMethod}
-                            onChange={e => handleSelectPaymentMethodInPOS(e.target.value)}
+                            onChange={e => typeof handleSelectPaymentMethodInPOS === 'function' ? handleSelectPaymentMethodInPOS(e.target.value) : setSelectedPaymentMethod(e.target.value)}
                             className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold text-stone-900"
                           >
-                            {paymentMethods.map(pm => (
-                              <option key={pm.id} value={pm.name}>
+                            {typeof paymentMethods !== 'undefined' && paymentMethods.map(pm => (
+                              <option key={pm.id || pm.name} value={pm.name}>
                                 {pm.name}
                               </option>
                             ))}
                           </select>
                         </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-emerald-900 mb-0.5">
+                            📥 Cuenta Receptora:
+                          </label>
+                          <select
+                            value={paymentReceiverAccount}
+                            onChange={e => setPaymentReceiverAccount(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                          >
+                            {typeof receivingAccounts !== 'undefined' && receivingAccounts.map((acc, idx) => (
+                              <option key={idx} value={acc}>{acc}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                         
                       <div className="pt-1 border-t border-stone-200">
                         <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
