@@ -5697,19 +5697,17 @@ if (isCustomerPublicView) {
                 onClick={() => {
                   const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
                     .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${lastInvoiceModal.deliveryFee.toFixed(
-                    2
-                  )}\n*TOTAL: $${lastInvoiceModal.total.toFixed(2)} (Bs. ${Number(
+                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee).toFixed(2)}\n*TOTAL: $${Number(lastInvoiceModal.total).toFixed(2)} (Bs. ${Number(
                     lastInvoiceModal.totalBs
                   ).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${
-                    lastInvoiceModal.paymentDetails?.reference
+                    lastInvoiceModal.paymentDetails?.reference || 'Pendiente'
                   }\nEmisor: ${
                     lastInvoiceModal.paymentDetails?.senderName ||
                     lastInvoiceModal.paymentDetails?.sender
                   } | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${
                     lastInvoiceModal.paymentDetails?.senderBank || 'S/N'
                   }`;
-                  copyTextToClipboard(text);
+                  if (typeof copyTextToClipboard === 'function') copyTextToClipboard(text);
                 }}
                 className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow"
               >
@@ -5718,7 +5716,9 @@ if (isCustomerPublicView) {
               </button>
               <button
                 type="button"
-                onClick={() => handleDownloadInvoicePDF(lastInvoiceModal)}
+                onClick={() => {
+                  if (typeof handleDownloadInvoicePDF === 'function') handleDownloadInvoicePDF(lastInvoiceModal);
+                }}
                 className="py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1 shadow"
               >
                 <Printer className="w-4 h-4" /> Descargar Factura PDF
@@ -5730,7 +5730,7 @@ if (isCustomerPublicView) {
               <div className="grid grid-cols-2 gap-2 mt-4 print:hidden">
                 <button
                   type="button"
-                  onClick={handleConfirmCheckout}
+                  onClick={typeof handleConfirmCheckout === 'function' ? handleConfirmCheckout : undefined}
                   className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1 shadow"
                 >
                   <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Factura
