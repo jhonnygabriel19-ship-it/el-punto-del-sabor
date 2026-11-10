@@ -2052,7 +2052,7 @@ const persistToCloud = async (partialData) => {
     // 3. PARA LIMPIAR EL FORMULARIO DESPUÉS DE GUARDAR
     setProductForm({
       name: '',
-      category: typeof CATEGORIES !== 'undefined' && CATEGORIES.length > 0 ? CATEGORIES[0].id : 'perros', // <--- CAMBIO CLAVE A MAYÚSCULAS
+      category: 'perros', // <--- LO DEJAMOS EN TEXTO PLANO PARA EVITAR EL ERROR FATAL
       orden: '', 
       stage: 1,
       price: '',
@@ -2062,7 +2062,7 @@ const persistToCloud = async (partialData) => {
       description: '',
       image: ''
     });
-  }; // <--- LA LLAVE QUE CIERRA LA FUNCIÓN
+  }; // <--- LLAVE QUE CIERRA LA FUNCIÓN handleSaveProduct
 
   const handleSelectSupplyFromMemory = (item) => {
     setExpenseForm(prev => ({
