@@ -2013,9 +2013,9 @@ const persistToCloud = async (partialData) => {
               }
             : p
         );
-        // FORZAMOS LA SINCRONIZACIÓN INMEDIATA
+        // FORZAMOS LA SINCRONIZACIÓN CON LA FUNCIÓN CORRECTA DE TU SISTEMA
         try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
-        if (typeof persistToCloud === 'function') persistToCloud({ products: updated });
+        saveToCloud("products", updated); // <--- CORRECCIÓN CLAVE AQUÍ
         return updated;
       });
       showNotification(`Producto "${productForm.name}" actualizado.`);
@@ -2039,9 +2039,9 @@ const persistToCloud = async (partialData) => {
       
       setProducts(prev => {
         const updated = [newProd, ...prev];
-        // FORZAMOS LA SINCRONIZACIÓN INMEDIATA
+        // FORZAMOS LA SINCRONIZACIÓN CON LA FUNCIÓN CORRECTA DE TU SISTEMA
         try { localStorage.setItem('epds_products_v2', JSON.stringify(updated)); } catch (e) {}
-        if (typeof persistToCloud === 'function') persistToCloud({ products: updated });
+        saveToCloud("products", updated); // <--- CORRECCIÓN CLAVE AQUÍ
         return updated;
       });
       showNotification(`Producto "${newProd.name}" agregado al menú.`);
@@ -3727,6 +3727,7 @@ if (isCustomerPublicView) {
                           setProductForm({
                             name: '',
                             category: 'perros',
+                            orden: '', // <--- AGREGA ESTA LÍNEA AQUÍ
                             stage: 1,
                             price: '',
                             cost: '',
@@ -3845,6 +3846,7 @@ if (isCustomerPublicView) {
                               setProductForm({
                                 name: p.name,
                                 category: p.category,
+                                orden: p.orden || '', // <--- AGREGA ESTA LÍNEA AQUÍ
                                 stage: p.stage,
                                 price: p.price,
                                 cost: p.cost,
