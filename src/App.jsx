@@ -1414,11 +1414,13 @@ const persistToCloud = async (partialData) => {
   };
 
   const availableCustomerProducts = useMemo(() => {
-    return products.filter(p => {
-      const hasStock = Number(p.stock) > 0 && p.active !== false;
-      const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
-      return hasStock && matchesStage;
-    });
+    return products
+      .filter(p => {
+        const hasStock = Number(p.stock) > 0 && p.active !== false;
+        const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
+        return hasStock && matchesStage;
+      })
+      .sort((a, b) => (a.orden || 999) - (b.orden || 999)); // <--- AQUÍ APLICAMOS EL ORDEN
   }, [products, activeStageFilter]);
 
   const getPublicMenuShareUrl = () => {
@@ -1479,7 +1481,9 @@ const persistToCloud = async (partialData) => {
     ];
 
     CATEGORIES.filter(c => c.id !== 'todos').forEach(cat => {
-      const catProds = availableCustomerProducts.filter(p => p.category === cat.id);
+      const catProds = availableCustomerProducts
+  .filter(p => p.category === cat.id)
+  .sort((a, b) => (a.orden || 999) - (b.orden || 999));
       if (catProds.length > 0) {
         lines.push({ type: 'header', text: cat.label.toUpperCase() });
         catProds.forEach(p => {
@@ -1987,6 +1991,7 @@ const persistToCloud = async (partialData) => {
     const fallbackImg =
       FALLBACK_BY_CATEGORY[productForm.category] || FALLBACK_BY_CATEGORY.perros;
 
+    // 1. AL ACTUALIZAR UN PRODUCTO EXISTENTE
     if (editingProduct) {
       setProducts(prev =>
         prev.map(p =>
@@ -1995,6 +2000,7 @@ const persistToCloud = async (partialData) => {
                 ...p,
                 name: productForm.name.trim(),
                 category: productForm.category,
+                orden: Number(productForm.orden) || 999, // <--- NUEVA LÍNEA
                 stage: Number(productForm.stage || 1),
                 price: Number(productForm.price),
                 cost: Number(productForm.cost || 0),
@@ -2007,11 +2013,14 @@ const persistToCloud = async (partialData) => {
         )
       );
       showNotification(`Producto "${productForm.name}" actualizado.`);
+    
+    // 2. AL CREAR UN PRODUCTO NUEVO
     } else {
       const newProd = {
         id: `prod_${Date.now()}`,
         name: productForm.name.trim(),
         category: productForm.category,
+        orden: Number(productForm.orden) || 999, // <--- NUEVA LÍNEA
         stage: Number(productForm.stage || 1),
         price: Number(productForm.price),
         cost: Number(productForm.cost || 0),
@@ -2026,9 +2035,12 @@ const persistToCloud = async (partialData) => {
     }
 
     setEditingProduct(null);
+    
+    // 3. PARA LIMPIAR EL FORMULARIO DESPUÉS DE GUARDAR
     setProductForm({
       name: '',
-      category: 'perros',
+      category: categories.length > 0 ? categories[0].id : 'perros',
+      orden: '', // <--- NUEVA LÍNEA
       stage: 1,
       price: '',
       cost: '',
@@ -2396,16 +2408,18 @@ const persistToCloud = async (partialData) => {
     showNotification(`Factura de prueba ${demoSale.invoiceNumber} generada con éxito.`);
   };
 
-  if (isCustomerPublicView) {
-    const publicProducts = availableCustomerProducts.filter(p => {
-      const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
-      const q = customerSearch.trim().toLowerCase();
-      const matchQ =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q);
-      return matchCat && matchQ;
-    });
+if (isCustomerPublicView) {
+    const publicProducts = availableCustomerProducts
+      .filter(p => {
+        const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
+        const q = customerSearch.trim().toLowerCase();
+        const matchQ =
+          !q ||
+          p.name.toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q);
+        return matchCat && matchQ;
+      })
+      .sort((a, b) => (a.orden || 999) - (b.orden || 999)); // <--- AQUÍ APLICAMOS EL ORDEN
 
     const selectedPublicZone =
       deliveryZones.find(z => z.id === customerOrderForm.zoneId) ||
@@ -3594,6 +3608,52 @@ const persistToCloud = async (partialData) => {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Precio Venta ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={productForm.price}
+                      onChange={e => setProductForm({ ...productForm, price: e.target.value })}
+                      placeholder="2.50"
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Costo Receta ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={productForm.cost}
+                      onChange={e => setProductForm({ ...productForm, cost: e.target.value })}
+                      placeholder="1.10"
+                      className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* --- NUEVO CAMPO: POSICIÓN EN EL MENÚ --- */}
+                <div className="mt-2">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Posición en el Menú (1, 2, 3...)
+                  </label>
+                  <input
+                    type="number"
+                    value={productForm.orden || ''}
+                    onChange={e => setProductForm({ ...productForm, orden: e.target.value })}
+                    placeholder="Ej: 1 (Déjalo en blanco para enviarlo al final)"
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs bg-white text-stone-900 outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                {/* ---------------------------------------- */}
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
