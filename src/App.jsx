@@ -2062,6 +2062,7 @@ const persistToCloud = async (partialData) => {
       description: '',
       image: ''
     });
+  }; // <--- ¡ESTA ES LA LLAVE EXACTA QUE TE FALTA AGREGAR!
 
   const handleSelectSupplyFromMemory = (item) => {
     setExpenseForm(prev => ({
