@@ -1519,7 +1519,7 @@ const persistToCloud = async (partialData) => {
     );
   };
 
-  const handleDownloadCustomerMenuImagePoster = () => {
+  const handleDownloadCustomerMenuImagePoster = async () => {
     try {
       const items = availableCustomerProducts;
       const width = 900;
@@ -1544,9 +1544,19 @@ const persistToCloud = async (partialData) => {
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, width, 155);
 
+      // --- INICIO CÓDIGO DEL LOGO ---
+      const logo = new Image();
+      logo.crossOrigin = "Anonymous";
+      logo.src = "https://i.postimg.cc/vmVbb864/logo.jpg";
+      await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; });
+
+      // Dibujar la imagen ajustada a la izquierda
+      ctx.drawImage(logo, marginX, 22, 45, 45); 
+
+      // Escribir el título movido un poco hacia la derecha para dar espacio al logo
       ctx.fillStyle = '#1c1917';
       ctx.font = '900 38px sans-serif';
-      ctx.fillText('🌭 EL PUNTO DEL SABOR', marginX, 62);
+      ctx.fillText('EL PUNTO DEL SABOR', marginX + 60, 62);
 
       ctx.font = 'bold 19px sans-serif';
       ctx.fillText('MENÚ DIGITAL DELIVERY • PERROS, COMBOS, BURGERS Y ESPECIALIDADES', marginX, 98);
