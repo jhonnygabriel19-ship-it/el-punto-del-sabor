@@ -1824,18 +1824,14 @@ const persistToCloud = async (partialData) => {
     showNotification('Factura a crédito marcada como cobrada y sumada a caja.');
   };
 
-  // Emitir Factura
-  const handleCheckout = () => {
+// 1. Validar y generar la vista previa de la factura
+  const handleReviewCheckout = () => {
     if (cart.length === 0) {
       showNotification('Agrega al menos un producto del menú a la factura.', 'error');
       return;
     }
     if (!customDeliveryAddress.trim()) {
       showNotification('La dirección de envío es obligatoria para la factura delivery.', 'error');
-      return;
-    }
-    if (paymentCondition === 'contado' && selectedPaymentMethod === 'Pago Móvil' && !paymentReference.trim()) {
-      showNotification('Ingresa el número de referencia del Pago Móvil.', 'error');
       return;
     }
 
@@ -1857,8 +1853,8 @@ const persistToCloud = async (partialData) => {
     const newInvoice = {
       id: `sale_${Date.now()}`,
       invoiceNumber: getNextInvoiceNumber(paymentCondition),
-      date: getLocalISOString().split('T')[0],
-      timestamp: getLocalISOString(),
+      date: new Date().toISOString().split('T')[0],
+      timestamp: new Date().toISOString(),
       cashier: currentUser.username,
       customerId: customerObj.id,
       customerName: customerObj.name,
@@ -1885,31 +1881,48 @@ const persistToCloud = async (partialData) => {
         sender: formattedSenderSummary,
         bankOrPhone: `${paymentSenderBank || ''} (${paymentSenderPhone || customerObj.phone})`.trim()
       },
-      notes: orderNotes
+      notes: orderNotes,
+      status: 'pending' // Marcamos la factura como pendiente de confirmación
     };
 
+    // Abre el modal que ya tienes, pero con la factura en estado pendiente
+    setLastInvoiceModal(newInvoice);
+  };
+
+  // 2. Confirmar y procesar la factura definitiva
+  const handleConfirmCheckout = () => {
+    if (!lastInvoiceModal) return;
+
+    // Descuenta el inventario
     setProducts(prev =>
       prev.map(prod => {
-        const soldItem = cart.find(i => i.productId === prod.id);
+        const soldItem = lastInvoiceModal.items.find(i => i.productId === prod.id);
         if (!soldItem) return prod;
         return { ...prod, stock: Math.max(0, Number(prod.stock) - soldItem.qty) };
       })
     );
 
+    // Actualiza los datos del cliente
     setCustomers(prev =>
       prev.map(c =>
-        c.id === selectedCustomerId
-          ? { ...c, address: customDeliveryAddress.trim(), defaultZoneId: selectedZoneId }
+        c.id === lastInvoiceModal.customerId
+          ? { ...c, address: lastInvoiceModal.deliveryAddress, defaultZoneId: selectedZoneId }
           : c
       )
     );
 
-    setSales(prev => [newInvoice, ...prev]);
-    setLastInvoiceModal(newInvoice);
+    // Cambia el estado a confirmado y guarda
+    const confirmedInvoice = { ...lastInvoiceModal, status: 'confirmed' };
+    setSales(prev => [confirmedInvoice, ...prev]);
+    
+    // Limpia el carrito y los campos
     setCart([]);
     setPaymentReference('');
     setOrderNotes('');
-    showNotification(`Factura ${newInvoice.invoiceNumber} registrada con éxito.`);
+    
+    // Mantiene el modal abierto para que puedas imprimir la factura ya confirmada
+    setLastInvoiceModal(confirmedInvoice);
+    showNotification(`Factura ${confirmedInvoice.invoiceNumber} registrada con éxito.`);
   };
 
   const handleSaveCustomer = (e) => {
@@ -3524,7 +3537,7 @@ if (isCustomerPublicView) {
 
                 <button
                   type="button"
-                  onClick={handleCheckout}
+                  onClick={handleReviewCheckout}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-stone-950 font-black text-sm shadow-lg transition flex items-center justify-center gap-2"
                 >
                   <Printer className="w-4 h-4" /> Emitir Factura y Registrar Venta
@@ -5702,16 +5715,33 @@ if (isCustomerPublicView) {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setLastInvoiceModal(null)}
-              className="w-full py-2 rounded-xl bg-stone-200 text-stone-800 font-bold text-xs print:hidden"
-            >
-              Cerrar Factura
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+            {/* INICIO DE LOS NUEVOS BOTONES DE CONFIRMACIÓN */}
+            {lastInvoiceModal.status === 'pending' ? (
+              <div className="grid grid-cols-2 gap-2 mt-4 print:hidden">
+                <button
+                  type="button"
+                  onClick={handleConfirmCheckout}
+                  className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1 shadow"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Factura
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLastInvoiceModal(null)}
+                  className="py-3 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs"
+                >
+                  Volver a Modificar Pedido
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => setLastInvoiceModal(null)}
+                  className="w-full py-2 rounded-xl bg-stone-200 text-stone-800 font-bold text-xs"
+                >
+                  Cerrar Factura
+                </button>
+              </div>
+            )}
+            {/* FIN DE LOS NUEVOS BOTONES */}
