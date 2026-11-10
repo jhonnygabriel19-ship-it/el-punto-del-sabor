@@ -2527,20 +2527,23 @@ const persistToCloud = async (partialData) => {
     return (
       <div className="min-h-screen bg-stone-950 text-white flex flex-col">
         <header className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-stone-950 shadow-xl sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-stone-950 flex items-center justify-center shadow overflow-hidden"> 
-                <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-cover" /> 
+          <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {/* Logo aumentado a tamaño de 20x20 de Tailwind (aprox 80px) con bordes más suaves y padding blanco para destacar sobre el fondo oscuro */}
+              <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 p-1"> 
+                <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-contain" /> 
               </div>
-              <div>
-                <span className="px-2 py-0.5 rounded-full bg-stone-950 text-amber-400 text-[10px] font-black uppercase">
+              <div className="flex flex-col justify-center">
+                <span className="px-2 py-0.5 rounded-full bg-stone-950 text-amber-400 text-[10px] font-black uppercase w-max mb-1">
                   Menú Digital Oficial • Servicio Delivery
                 </span>
-                <h1 className="text-xl font-black tracking-tight text-stone-950">
+                <h1 className="text-2xl font-black tracking-tight text-stone-950 leading-none mb-1">
                   EL PUNTO DEL SABOR
                 </h1>
                 <p className="text-xs font-extrabold text-stone-900">
-                  📲 Pedidos WhatsApp: {businessWhatsApp} • Tasa BCV: Bs. {Number(exchangeRate).toFixed(2)}/$
+                  📲 Pedidos WhatsApp: {businessWhatsApp} <br className="sm:hidden" />
+                  <span className="hidden sm:inline"> • </span>
+                  Tasa BCV: Bs. {Number(exchangeRate).toFixed(2)}/$
                 </p>
               </div>
             </div>
