@@ -166,6 +166,8 @@ const VENEZUELAN_BANKS = [
   '0191 - BNC (Banco Nacional de Crédito)'
 ];
 
+const LOGO_URL = "https://i.postimg.cc/vmVbb864/logo.jpg"; // Reemplaza esto con tu enlace directo
+
 // ==========================================
 // DATOS INICIALES PRE-CARGADOS ("EL PUNTO DEL SABOR")
 // ==========================================
@@ -2514,8 +2516,8 @@ const persistToCloud = async (partialData) => {
         <header className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-stone-950 shadow-xl sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-stone-950 text-white flex items-center justify-center text-2xl shadow">
-                🌭
+              <div className="w-12 h-12 rounded-2xl bg-stone-950 flex items-center justify-center shadow overflow-hidden"> 
+                <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-cover" /> 
               </div>
               <div>
                 <span className="px-2 py-0.5 rounded-full bg-stone-950 text-amber-400 text-[10px] font-black uppercase">
@@ -2795,8 +2797,8 @@ const persistToCloud = async (partialData) => {
       <div className="min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-amber-500/30">
           <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 p-6 text-white text-center">
-            <div className="w-16 h-16 rounded-2xl bg-stone-950/90 mx-auto flex items-center justify-center text-3xl shadow-lg mb-3">
-              🌭
+            <div className="w-16 h-16 rounded-2xl bg-stone-950/90 mx-auto flex items-center justify-center shadow-lg mb-3 overflow-hidden">
+              <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
             <h1 className="text-2xl font-black tracking-tight">EL PUNTO DEL SABOR</h1>
             <p className="text-xs font-medium text-amber-100 mt-1">
@@ -5541,7 +5543,7 @@ const persistToCloud = async (partialData) => {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-amber-500">
             <div className="text-center border-b border-dashed border-stone-300 pb-3">
-              <div className="text-2xl">🌭</div>
+              <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-14 h-14 mx-auto object-cover rounded-xl mb-2" />
               <h3 className="text-lg font-black text-stone-900">EL PUNTO DEL SABOR</h3>
               <p className="text-xs font-bold text-stone-500">
                 Factura Delivery: {lastInvoiceModal.invoiceNumber} • Tel: {businessWhatsApp}
