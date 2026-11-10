@@ -71,7 +71,7 @@ try {
     appId: "1:501069850002:web:ee740ed897148e870e8d4b"
   };
   const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  db = getFirestore(firebaseApp);
+  db = null;
   auth = getAuth(firebaseApp);
 } catch (err) {
   console.warn('Fallo en la inicialización de Firebase. Usando respaldo local:', err);
@@ -2475,7 +2475,7 @@ const persistToCloud = async (partialData) => {
 
       const orderText =
         `🌭 *NUEVO PEDIDO DELIVERY - EL PUNTO DEL SABOR*\n\n` +
-        `👤 *DATOS DEL CLIENTE PARA FACTURAR:*\n` +
+        `👤 *DATOS DEL CLIENTE:*\n` +
         `• *Nombre:* ${cleanName}\n` +
         `• *Cédula / RIF:* ${cleanDoc}\n` +
         `• *Teléfono:* ${cleanPhone}\n` +
@@ -2494,20 +2494,10 @@ const persistToCloud = async (partialData) => {
           .join('\n') +
         `\n\n💵 *Subtotal Productos:* $${customerSubtotalUSD.toFixed(2)}\n` +
         `🛵 *Costo de Envío:* $${customerDeliveryFeeUSD.toFixed(2)}\n` +
-        `💰 *TOTAL A FACTURAR: $${customerTotalUSD.toFixed(2)} (Bs. ${(
+        `💰 *TOTAL DEL PEDIDO: $${customerTotalUSD.toFixed(2)} (Bs. ${(
           customerTotalUSD * exchangeRate
         ).toFixed(2)})*\n\n` +
-        `💳 *DATOS DEL PAGO:*\n` +
-        `• *Modalidad:* ${
-          customerOrderForm.paymentCondition === 'credito'
-            ? 'Solicitud a Crédito'
-            : 'Pago de Contado'
-        }\n` +
-        `• *Forma de Pago:* ${customerOrderForm.paymentMethod}\n` +
-        `• *Banco / Cuenta Emisor:* ${customerOrderForm.paymentSenderBank || 'N/A'}\n` +
-        `• *N° Referencia / Operación:* ${
-          customerOrderForm.paymentReference.trim() || 'Envío comprobante por aquí'
-        }` +
+        `⏳ *Nota: El pago será coordinado directamente por este chat con nuestro equipo.*` +
         (customerOrderForm.notes.trim()
           ? `\n\n📝 *Nota del Cliente:* ${customerOrderForm.notes.trim()}`
           : '');
@@ -2751,91 +2741,7 @@ const persistToCloud = async (partialData) => {
                   placeholder="📍 Dirección exacta de envío (Urbanización, calle, casa, referencia) *"
                   className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
                 />
-
-                <div className="text-[11px] font-black text-amber-400 uppercase pt-1">
-                  2. Forma de Pago:
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">
-                      Método de Pago:
-                    </label>
-                    <select
-                      value={customerOrderForm.paymentMethod}
-                      onChange={e => {
-                        const m = e.target.value;
-                        const isBinOrCash =
-                          m.toLowerCase().includes('binance') ||
-                          m.toLowerCase().includes('efectivo') ||
-                          m.toLowerCase().includes('zelle');
-                        setCustomerOrderForm({
-                          ...customerOrderForm,
-                          paymentMethod: m,
-                          paymentSenderBank: isBinOrCash ? '' : VENEZUELAN_BANKS[0]
-                        });
-                      }}
-                      className="w-full px-2.5 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs font-bold"
-                    >
-                      {paymentMethods.map(pm => (
-                        <option key={pm.id} value={pm.name}>
-                          {pm.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">
-                      N° Referencia (Opcional):
-                    </label>
-                    <input
-                      type="text"
-                      value={customerOrderForm.paymentReference}
-                      onChange={e =>
-                        setCustomerOrderForm({
-                          ...customerOrderForm,
-                          paymentReference: e.target.value
-                        })
-                      }
-                      placeholder="Ej: 948271"
-                      className="w-full px-2.5 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs"
-                    />
-                  </div>
-                </div>
-
-                {customerOrderForm.paymentMethod.toLowerCase().includes('binance') ? (
-                  <input
-                    type="text"
-                    value={customerOrderForm.paymentSenderBank}
-                    onChange={e =>
-                      setCustomerOrderForm({
-                        ...customerOrderForm,
-                        paymentSenderBank: e.target.value
-                      })
-                    }
-                    placeholder="🟡 Tu Usuario / Correo / ID Binance"
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-amber-500/60 text-white text-xs"
-                  />
-                ) : !customerOrderForm.paymentMethod.toLowerCase().includes('efectivo') ? (
-                  <select
-                    value={customerOrderForm.paymentSenderBank}
-                    onChange={e =>
-                      setCustomerOrderForm({
-                        ...customerOrderForm,
-                        paymentSenderBank: e.target.value
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs"
-                  >
-                    <option value="">-- Banco desde donde realizas el pago --</option>
-                    {VENEZUELAN_BANKS.map(b => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-
+                
                 <input
                   type="text"
                   value={customerOrderForm.notes}
