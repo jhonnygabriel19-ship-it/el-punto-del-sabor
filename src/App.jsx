@@ -1648,17 +1648,19 @@ const persistToCloud = async (partialData) => {
   };
 
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchesCategory = posCategory === 'todos' || p.category === posCategory;
-      const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
-      const q = posSearch.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q);
-      return matchesCategory && matchesStage && matchesSearch;
-    });
+    return products
+      .filter(p => {
+        const matchesCategory = posCategory === 'todos' || p.category === posCategory;
+        const matchesStage = activeStageFilter === 'all' || Number(p.stage) <= Number(activeStageFilter);
+        const q = posSearch.trim().toLowerCase();
+        const matchesSearch =
+          !q ||
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q);
+        return matchesCategory && matchesStage && matchesSearch;
+      })
+      .sort((a, b) => (a.orden || 999) - (b.orden || 999)); // <--- ESTA ES LA LÍNEA QUE APLICA LA POSICIÓN EN EL POS
   }, [products, posCategory, activeStageFilter, posSearch]);
 
   const addToCart = (product) => {
