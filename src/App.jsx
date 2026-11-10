@@ -2530,8 +2530,8 @@ const persistToCloud = async (partialData) => {
           <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               {/* Logo aumentado a tamaño de 20x20 de Tailwind (aprox 80px) con bordes más suaves y padding blanco para destacar sobre el fondo oscuro */}
-              <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 p-1"> 
-                <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-contain" /> 
+              <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden flex-shrink-0"> 
+                <img src="https://i.postimg.cc/vmVbb864/logo.jpg" alt="Logo" className="w-full h-full object-cover scale-150" /> 
               </div>
               <div className="flex flex-col justify-center">
                 <span className="px-2 py-0.5 rounded-full bg-stone-950 text-amber-400 text-[10px] font-black uppercase w-max mb-1">
