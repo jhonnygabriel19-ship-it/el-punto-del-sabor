@@ -1544,29 +1544,32 @@ const persistToCloud = async (partialData) => {
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(0, 0, width, 155);
 
-      // --- INICIO CÓDIGO DEL LOGO ---
+      // --- INICIO CÓDIGO DEL LOGO Y ENCABEZADO ---
       const logo = new Image();
       logo.crossOrigin = "Anonymous";
       logo.src = "https://i.postimg.cc/vmVbb864/logo.jpg";
       await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; });
 
-      // Dibujar la imagen ajustada a la izquierda
-      ctx.drawImage(logo, marginX, 22, 45, 45); 
+      // 1. Logo al doble de tamaño (100x100) centrado verticalmente en la franja
+      ctx.drawImage(logo, marginX, 27, 100, 100); 
 
-      // Escribir el título movido un poco hacia la derecha para dar espacio al logo
+      // 2. Título principal desplazado a la derecha para no chocar con el logo grande
       ctx.fillStyle = '#1c1917';
       ctx.font = '900 38px sans-serif';
-      ctx.fillText('EL PUNTO DEL SABOR', marginX + 60, 62);
+      ctx.fillText('EL PUNTO DEL SABOR', marginX + 125, 62);
 
+      // 3. Subtítulo alineado perfectamente con el título principal
       ctx.font = 'bold 19px sans-serif';
-      ctx.fillText('MENÚ DIGITAL DELIVERY • PERROS, COMBOS, BURGERS Y ESPECIALIDADES', marginX, 98);
+      ctx.fillText('MENÚ DIGITAL DELIVERY • PERROS, COMBOS, BURGERS Y ESPECIALIDADES', marginX + 125, 98);
 
+      // 4. Datos de contacto y tasa BCV alineados debajo del subtítulo
       ctx.font = 'bold 16px sans-serif';
       ctx.fillText(
         `📲 Pedidos WhatsApp: ${businessWhatsApp}   |   Tasa BCV: Bs. ${Number(exchangeRate).toFixed(2)}/$`,
-        marginX,
+        marginX + 125,
         132
       );
+      // --- FIN CÓDIGO DEL LOGO Y ENCABEZADO ---
 
       let y = 195;
       const textMaxW = boxWidth - 210;
