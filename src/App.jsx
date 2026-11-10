@@ -3356,25 +3356,7 @@ if (isCustomerPublicView) {
                             ))}
                           </select>
                         </div>
-
-                        <div>
-                          <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
-                            🔢 N° de Referencia / ID de Operación:
-                          </label>
-                          <input
-                            type="text"
-                            value={paymentReference}
-                            onChange={e => setPaymentReference(e.target.value)}
-                            placeholder={
-                              selectedPaymentMethod.toLowerCase().includes('binance')
-                                ? 'ID de Orden Binance Pay'
-                                : 'Ej: 849201'
-                            }
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
-                          />
-                        </div>
-                      </div>
-
+                        
                       <div className="pt-1 border-t border-stone-200">
                         <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
                           Datos del Emisor del Pago (Celdas Individuales):
@@ -5645,7 +5627,35 @@ if (isCustomerPublicView) {
                 {lastInvoiceModal.paymentCondition.toUpperCase()})
               </div>
               <div>
-                <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
+                {/* CAMPO DE REFERENCIA INTERACTIVO */}
+                {lastInvoiceModal.status === 'pending' ? (
+                  <div className="mt-2 pt-2 border-t border-stone-300">
+                    <label className="block text-[11px] font-black text-amber-600 mb-1 uppercase">
+                      🔢 N° Referencia (Ingrese al confirmar pago):
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentReference}
+                      onChange={e => {
+                        setPaymentReference(e.target.value);
+                        setLastInvoiceModal({
+                          ...lastInvoiceModal,
+                          paymentDetails: {
+                            ...lastInvoiceModal.paymentDetails,
+                            reference: e.target.value || 'N/A'
+                          }
+                        });
+                      }}
+                      placeholder="Ej: 839213"
+                      className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-stone-900 outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
+                  </div>
+                )}
+                
               </div>
               <div>
                 <strong>👤 Nombre Emisor:</strong>{' '}
