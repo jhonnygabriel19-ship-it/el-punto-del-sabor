@@ -5714,13 +5714,13 @@ if (isCustomerPublicView) {
               ))}
               <div className="flex justify-between text-stone-500 pt-1">
                 <span>Servicio Delivery:</span>
-                <span>${Number(lastInvoiceModal.deliveryFee).toFixed(2)}</span>
+                <span>${Number(lastInvoiceModal.deliveryFee || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm font-black text-stone-900 pt-1">
                 <span>TOTAL FACTURA:</span>
                 <span>
-                  ${lastInvoiceModal.total.toFixed(2)} (Bs.{' '}
-                  {Number(lastInvoiceModal.totalBs).toFixed(2)})
+                  ${Number(lastInvoiceModal.total || 0).toFixed(2)} (Bs.{' '}
+                  {Number(lastInvoiceModal.totalBs || 0).toFixed(2)})
                 </span>
               </div>
             </div>
@@ -5731,22 +5731,14 @@ if (isCustomerPublicView) {
                 onClick={() => {
                   const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
                     .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee).toFixed(2)}\n*TOTAL: $${Number(lastInvoiceModal.total).toFixed(2)} (Bs. ${Number(
-                    lastInvoiceModal.totalBs
-                  ).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${
-                    lastInvoiceModal.paymentDetails?.reference || 'Pendiente'
-                  }\nEmisor: ${
-                    lastInvoiceModal.paymentDetails?.senderName ||
-                    lastInvoiceModal.paymentDetails?.sender
-                  } | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${
-                    lastInvoiceModal.paymentDetails?.senderBank || 'S/N'
-                  }`;
+                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee || 0).toFixed(2)}\n*TOTAL: $${Number(lastInvoiceModal.total || 0).toFixed(2)} (Bs. ${Number(lastInvoiceModal.totalBs || 0).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${lastInvoiceModal.paymentDetails?.reference || 'N/A'}\nEmisor: ${lastInvoiceModal.paymentDetails?.senderName || lastInvoiceModal.paymentDetails?.sender || 'N/A'} | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${lastInvoiceModal.paymentDetails?.senderBank || 'S/N'}`;
+                  
                   if (typeof copyTextToClipboard === 'function') copyTextToClipboard(text);
                 }}
                 className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow"
               >
                 {copiedWhatsApp ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedWhatsApp ? '¡Copiado al Portapapeles!' : 'Copiar para WhatsApp'}
+                {copiedWhatsApp ? '¡Copiado!' : 'Copiar para WhatsApp'}
               </button>
               <button
                 type="button"
@@ -5764,7 +5756,7 @@ if (isCustomerPublicView) {
               <div className="grid grid-cols-2 gap-2 mt-4 print:hidden">
                 <button
                   type="button"
-                  onClick={typeof handleConfirmCheckout === 'function' ? handleConfirmCheckout : undefined}
+                  onClick={handleConfirmCheckout}
                   className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1 shadow"
                 >
                   <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Factura
@@ -5788,6 +5780,7 @@ if (isCustomerPublicView) {
                 </button>
               </div>
             )}
+
             {/* FIN DE LOS NUEVOS BOTONES */}
           </div>
         </div>
