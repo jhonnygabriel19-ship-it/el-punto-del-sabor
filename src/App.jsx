@@ -5661,37 +5661,36 @@ if (isCustomerPublicView) {
                 <strong>💳 Pago:</strong> {lastInvoiceModal.paymentMethod} (
                 {lastInvoiceModal.paymentCondition.toUpperCase()})
               </div>
-              <div>
-                {/* CAMPO DE REFERENCIA INTERACTIVO */}
-                {lastInvoiceModal.status === 'pending' ? (
-                  <div className="mt-2 pt-2 border-t border-stone-300">
-                    <label className="block text-[11px] font-black text-amber-600 mb-1 uppercase">
-                      🔢 N° Referencia (Ingrese al confirmar pago):
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentReference}
-                      onChange={e => {
-                        setPaymentReference(e.target.value);
-                        setLastInvoiceModal({
-                          ...lastInvoiceModal,
-                          paymentDetails: {
-                            ...lastInvoiceModal.paymentDetails,
-                            reference: e.target.value || 'N/A'
-                          }
-                        });
-                      }}
-                      placeholder="Ej: 839213"
-                      className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-stone-900 outline-none"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
-                  </div>
-                )}
-                
-              </div>
+              
+              {/* CAMPO DE REFERENCIA INTERACTIVO */}
+              {lastInvoiceModal.status === 'pending' ? (
+                <div className="mt-2 pt-2 border-t border-stone-300">
+                  <label className="block text-[11px] font-black text-amber-600 mb-1 uppercase">
+                    🔢 N° Referencia (Ingrese al confirmar pago):
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={e => {
+                      setPaymentReference(e.target.value);
+                      setLastInvoiceModal({
+                        ...lastInvoiceModal,
+                        paymentDetails: {
+                          ...lastInvoiceModal.paymentDetails,
+                          reference: e.target.value || 'N/A'
+                        }
+                      });
+                    }}
+                    placeholder="Ej: 839213"
+                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-stone-900 outline-none"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
+                </div>
+              )}
+              
               <div>
                 <strong>👤 Nombre Emisor:</strong>{' '}
                 {lastInvoiceModal.paymentDetails?.senderName ||
