@@ -3311,52 +3311,69 @@ if (isCustomerPublicView) {
                   )}
                 </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-stone-200">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentCondition('contado')}
-                      className={`py-2 rounded-xl text-xs font-extrabold border transition ${
-                        paymentCondition === 'contado'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow'
-                          : 'bg-stone-100 text-stone-600 border-stone-200'
-                      }`}
-                    >
-                      💵 Pago de Contado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentCondition('credito')}
-                      className={`py-2 rounded-xl text-xs font-extrabold border transition ${
-                        paymentCondition === 'credito'
-                          ? 'bg-amber-600 text-white border-amber-600 shadow'
-                          : 'bg-stone-100 text-stone-600 border-stone-200'
-                      }`}
-                    >
-                      📝 Venta a Crédito (Fiado)
-                    </button>
-                  </div>
+                <div className="flex gap-2 p-1 bg-stone-200 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentCondition('contado')}
+                        className={`flex-1 py-2 rounded-lg font-black text-xs flex items-center justify-center gap-1 transition ${
+                          paymentCondition === 'contado'
+                            ? 'bg-emerald-600 text-white shadow'
+                            : 'text-stone-500 hover:bg-stone-300'
+                        }`}
+                      >
+                        💵 Pago de Contado
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentCondition('credito')}
+                        className={`flex-1 py-2 rounded-lg font-black text-xs flex items-center justify-center gap-1 transition ${
+                          paymentCondition === 'credito'
+                            ? 'bg-amber-100 text-amber-700 shadow'
+                            : 'text-stone-500 hover:bg-stone-300'
+                        }`}
+                      >
+                        📄 Venta a Crédito (Fiado)
+                      </button>
+                    </div>
 
-                  {paymentCondition === 'contado' && (
-                    <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
-                            Método de Pago Recibido:
-                          </label>
-                          <select
-                            value={selectedPaymentMethod}
-                            onChange={e => typeof handleSelectPaymentMethodInPOS === 'function' ? handleSelectPaymentMethodInPOS(e.target.value) : setSelectedPaymentMethod(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold text-stone-900"
-                          >
-                            {typeof paymentMethods !== 'undefined' && paymentMethods.map(pm => (
-                              <option key={pm.id || pm.name} value={pm.name}>
-                                {pm.name}
-                              </option>
-                            ))}
-                          </select>
+                    {paymentCondition === 'contado' && (
+                      <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                              Método de Pago Recibido:
+                            </label>
+                            <select
+                              value={selectedPaymentMethod}
+                              onChange={e => typeof handleSelectPaymentMethodInPOS === 'function' ? handleSelectPaymentMethodInPOS(e.target.value) : setSelectedPaymentMethod(e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold text-stone-900"
+                            >
+                              {typeof paymentMethods !== 'undefined' && paymentMethods.map(pm => (
+                                <option key={pm.id || pm.name} value={pm.name}>
+                                  {pm.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-emerald-900 mb-0.5">
+                              📥 Cuenta Receptora:
+                            </label>
+                            <select
+                              value={paymentReceiverAccount}
+                              onChange={e => setPaymentReceiverAccount(e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                            >
+                              {typeof receivingAccounts !== 'undefined' && receivingAccounts.map((acc, idx) => (
+                                <option key={idx} value={acc}>{acc}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-
+                      </div>
+                    )}
+                
                         <div>
                           <label className="block text-[10px] font-bold text-emerald-900 mb-0.5">
                             📥 Cuenta Receptora:
