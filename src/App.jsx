@@ -3311,87 +3311,70 @@ if (isCustomerPublicView) {
                   )}
                 </div>
 
-                <div className="flex gap-2 p-1 bg-stone-200 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentCondition('contado')}
-                        className={`flex-1 py-2 rounded-lg font-black text-xs flex items-center justify-center gap-1 transition ${
-                          paymentCondition === 'contado'
-                            ? 'bg-emerald-600 text-white shadow'
-                            : 'text-stone-500 hover:bg-stone-300'
-                        }`}
-                      >
-                        💵 Pago de Contado
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentCondition('credito')}
-                        className={`flex-1 py-2 rounded-lg font-black text-xs flex items-center justify-center gap-1 transition ${
-                          paymentCondition === 'credito'
-                            ? 'bg-amber-100 text-amber-700 shadow'
-                            : 'text-stone-500 hover:bg-stone-300'
-                        }`}
-                      >
-                        📄 Venta a Crédito (Fiado)
-                      </button>
-                    </div>
+                <div className="space-y-2.5 pt-2 border-t border-stone-200">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCondition('contado')}
+                      className={`py-2 rounded-xl text-xs font-extrabold border transition ${
+                        paymentCondition === 'contado'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow'
+                          : 'bg-stone-100 text-stone-600 border-stone-200'
+                      }`}
+                    >
+                      💵 Pago de Contado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCondition('credito')}
+                      className={`py-2 rounded-xl text-xs font-extrabold border transition ${
+                        paymentCondition === 'credito'
+                          ? 'bg-amber-600 text-white border-amber-600 shadow'
+                          : 'bg-stone-100 text-stone-600 border-stone-200'
+                      }`}
+                    >
+                      📝 Venta a Crédito (Fiado)
+                    </button>
+                  </div>
 
-                    {paymentCondition === 'contado' && (
-                      <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
-                              Método de Pago Recibido:
-                            </label>
-                            <select
-                              value={selectedPaymentMethod}
-                              onChange={e => typeof handleSelectPaymentMethodInPOS === 'function' ? handleSelectPaymentMethodInPOS(e.target.value) : setSelectedPaymentMethod(e.target.value)}
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold text-stone-900"
-                            >
-                              {typeof paymentMethods !== 'undefined' && paymentMethods.map(pm => (
-                                <option key={pm.id || pm.name} value={pm.name}>
-                                  {pm.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-bold text-emerald-900 mb-0.5">
-                              📥 Cuenta Receptora:
-                            </label>
-                            <select
-                              value={paymentReceiverAccount}
-                              onChange={e => setPaymentReceiverAccount(e.target.value)}
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
-                            >
-                              {typeof receivingAccounts !== 'undefined' && receivingAccounts.map((acc, idx) => (
-                                <option key={idx} value={acc}>{acc}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                
+                  {paymentCondition === 'contado' && (
+                    <div className="space-y-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] font-bold text-emerald-900 mb-0.5">
-                            📥 Cuenta Receptora:
+                          <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                            Método de Pago Recibido:
                           </label>
                           <select
-                            value={paymentReceiverAccount}
-                            onChange={e => setPaymentReceiverAccount(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                            value={selectedPaymentMethod}
+                            onChange={e => handleSelectPaymentMethodInPOS(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-bold text-stone-900"
                           >
-                            {typeof receivingAccounts !== 'undefined' && receivingAccounts.map((acc, idx) => (
-                              <option key={idx} value={acc}>{acc}</option>
+                            {paymentMethods.map(pm => (
+                              <option key={pm.id} value={pm.name}>
+                                {pm.name}
+                              </option>
                             ))}
                           </select>
                         </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                            🔢 N° de Referencia / ID de Operación:
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentReference}
+                            onChange={e => setPaymentReference(e.target.value)}
+                            placeholder={
+                              selectedPaymentMethod.toLowerCase().includes('binance')
+                                ? 'ID de Orden Binance Pay'
+                                : 'Ej: 849201'
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                        
+
                       <div className="pt-1 border-t border-stone-200">
                         <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
                           Datos del Emisor del Pago (Celdas Individuales):
@@ -5661,36 +5644,9 @@ if (isCustomerPublicView) {
                 <strong>💳 Pago:</strong> {lastInvoiceModal.paymentMethod} (
                 {lastInvoiceModal.paymentCondition.toUpperCase()})
               </div>
-              
-              {/* CAMPO DE REFERENCIA INTERACTIVO */}
-              {lastInvoiceModal.status === 'pending' ? (
-                <div className="mt-2 pt-2 border-t border-stone-300">
-                  <label className="block text-[11px] font-black text-amber-600 mb-1 uppercase">
-                    🔢 N° Referencia (Ingrese al confirmar pago):
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentReference}
-                    onChange={e => {
-                      setPaymentReference(e.target.value);
-                      setLastInvoiceModal({
-                        ...lastInvoiceModal,
-                        paymentDetails: {
-                          ...lastInvoiceModal.paymentDetails,
-                          reference: e.target.value || 'N/A'
-                        }
-                      });
-                    }}
-                    placeholder="Ej: 839213"
-                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-stone-900 outline-none"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
-                </div>
-              )}
-              
+              <div>
+                <strong>🔢 N° Referencia:</strong> {lastInvoiceModal.paymentDetails?.reference}
+              </div>
               <div>
                 <strong>👤 Nombre Emisor:</strong>{' '}
                 {lastInvoiceModal.paymentDetails?.senderName ||
@@ -5714,13 +5670,13 @@ if (isCustomerPublicView) {
               ))}
               <div className="flex justify-between text-stone-500 pt-1">
                 <span>Servicio Delivery:</span>
-                <span>${Number(lastInvoiceModal.deliveryFee || 0).toFixed(2)}</span>
+                <span>${Number(lastInvoiceModal.deliveryFee).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm font-black text-stone-900 pt-1">
                 <span>TOTAL FACTURA:</span>
                 <span>
-                  ${Number(lastInvoiceModal.total || 0).toFixed(2)} (Bs.{' '}
-                  {Number(lastInvoiceModal.totalBs || 0).toFixed(2)})
+                  ${lastInvoiceModal.total.toFixed(2)} (Bs.{' '}
+                  {Number(lastInvoiceModal.totalBs).toFixed(2)})
                 </span>
               </div>
             </div>
@@ -5731,20 +5687,28 @@ if (isCustomerPublicView) {
                 onClick={() => {
                   const text = `*EL PUNTO DEL SABOR - ${lastInvoiceModal.invoiceNumber}*\nCliente: ${lastInvoiceModal.customerName} (${lastInvoiceModal.customerPhone})\n📍 Dirección: ${lastInvoiceModal.deliveryAddress}\nPedido:\n${lastInvoiceModal.items
                     .map(i => `- ${i.qty}x ${i.name} ($${i.subtotal.toFixed(2)})`)
-                    .join('\n')}\n🛵 Delivery: $${Number(lastInvoiceModal.deliveryFee || 0).toFixed(2)}\n*TOTAL: $${Number(lastInvoiceModal.total || 0).toFixed(2)} (Bs. ${Number(lastInvoiceModal.totalBs || 0).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${lastInvoiceModal.paymentDetails?.reference || 'N/A'}\nEmisor: ${lastInvoiceModal.paymentDetails?.senderName || lastInvoiceModal.paymentDetails?.sender || 'N/A'} | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${lastInvoiceModal.paymentDetails?.senderBank || 'S/N'}`;
-                  
-                  if (typeof copyTextToClipboard === 'function') copyTextToClipboard(text);
+                    .join('\n')}\n🛵 Delivery: $${lastInvoiceModal.deliveryFee.toFixed(
+                    2
+                  )}\n*TOTAL: $${lastInvoiceModal.total.toFixed(2)} (Bs. ${Number(
+                    lastInvoiceModal.totalBs
+                  ).toFixed(2)})*\nPago: ${lastInvoiceModal.paymentMethod}\nRef: ${
+                    lastInvoiceModal.paymentDetails?.reference
+                  }\nEmisor: ${
+                    lastInvoiceModal.paymentDetails?.senderName ||
+                    lastInvoiceModal.paymentDetails?.sender
+                  } | C.I: ${lastInvoiceModal.paymentDetails?.senderDocument || 'S/N'} | Banco: ${
+                    lastInvoiceModal.paymentDetails?.senderBank || 'S/N'
+                  }`;
+                  copyTextToClipboard(text);
                 }}
                 className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow"
               >
                 {copiedWhatsApp ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedWhatsApp ? '¡Copiado!' : 'Copiar para WhatsApp'}
+                {copiedWhatsApp ? '¡Copiado al Portapapeles!' : 'Copiar para WhatsApp'}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (typeof handleDownloadInvoicePDF === 'function') handleDownloadInvoicePDF(lastInvoiceModal);
-                }}
+                onClick={() => handleDownloadInvoicePDF(lastInvoiceModal)}
                 className="py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1 shadow"
               >
                 <Printer className="w-4 h-4" /> Descargar Factura PDF
@@ -5780,7 +5744,6 @@ if (isCustomerPublicView) {
                 </button>
               </div>
             )}
-
             {/* FIN DE LOS NUEVOS BOTONES */}
           </div>
         </div>
