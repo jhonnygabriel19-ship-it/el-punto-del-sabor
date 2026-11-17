@@ -2436,18 +2436,18 @@ const persistToCloud = async (partialData) => {
   };
 
 if (isCustomerPublicView) {
-    const publicProducts = availableCustomerProducts
-      .filter(p => {
-        const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
-        const q = customerSearch.trim().toLowerCase();
-        const matchQ =
-          !q ||
-          p.name.toLowerCase().includes(q) ||
-          (p.description || '').toLowerCase().includes(q);
-        return matchCat && matchQ;
-      })
-      .sort((a, b) => (a.orden || 999) - (b.orden || 999)); // <--- AQUÍ APLICAMOS EL ORDEN
+    const publicProducts = availableCustomerProducts.filter(p => {
+      const matchCat = customerFilterCat === 'todos' || p.category === customerFilterCat;
+      const q = customerSearch.trim().toLowerCase();
+      const matchQ =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
 
+    // Se eliminó la selección de zona interactiva para el cliente.
+    // Solo calculamos el subtotal de los productos seleccionados:
     const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
 
     const addCustomerItem = (prod) => {
@@ -2477,8 +2477,6 @@ if (isCustomerPublicView) {
           .filter(i => i.qty > 0)
       );
     };
-
-    const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
 
     const handleSendCustomerOrderWhatsApp = () => {
       if (customerCart.length === 0) {
