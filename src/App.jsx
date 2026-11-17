@@ -2453,6 +2453,39 @@ if (isCustomerPublicView) {
       deliveryZones[0] || { name: 'Delivery', fee: 0 };
 
     const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
+    const customerDeliveryFeeUSD =
+      customerCart.length > 0 ? Number(selectedPublicZone.fee || 0) : 0;
+    const customerTotalUSD = customerSubtotalUSD + customerDeliveryFeeUSD;
+
+    const addCustomerItem = (prod) => {
+      setCustomerCart(prev => {
+        const exists = prev.find(i => i.id === prod.id);
+        if (exists) {
+          return prev.map(i => (i.id === prod.id ? { ...i, qty: i.qty + 1 } : i));
+        }
+        return [
+          ...prev,
+          {
+            id: prod.id,
+            name: prod.name,
+            category: prod.category,
+            price: Number(prod.price),
+            cost: Number(prod.cost || 0),
+            qty: 1
+          }
+        ];
+      });
+    };
+
+    const updateCustomerQty = (id, delta) => {
+      setCustomerCart(prev =>
+        prev
+          .map(i => (i.id === id ? { ...i, qty: i.qty + delta } : i))
+          .filter(i => i.qty > 0)
+      );
+    };
+
+    const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
 
     const handleSendCustomerOrderWhatsApp = () => {
       if (customerCart.length === 0) {
@@ -2518,7 +2551,7 @@ if (isCustomerPublicView) {
           .join('\n') +
         `\n\n💵 *TOTAL PRODUCTOS:* $${customerSubtotalUSD.toFixed(2)} (Bs. ${(
           customerSubtotalUSD * exchangeRate
-        ).toFixed(2)})*\n\n` +
+        ).toFixed(2)})\n\n` +
         `🛵 *Nota: El costo del delivery será asignado por el administrador al facturar su pedido.*\n` +
         `⏳ *Nota: El pago será coordinado directamente por este chat con nuestro equipo.*` +
         (customerOrderForm.notes.trim()
@@ -2531,7 +2564,6 @@ if (isCustomerPublicView) {
         '_blank'
       );
     };
-  
     return (
       <div className="min-h-screen bg-stone-950 text-white flex flex-col">
         <header className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-stone-950 shadow-xl sticky top-0 z-30">
@@ -2738,7 +2770,7 @@ if (isCustomerPublicView) {
                     className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-700 text-white text-xs outline-none focus:border-amber-500"
                   />
                 </div>
-             
+               
                 <textarea
                   rows={2}
                   value={customerOrderForm.address}
@@ -2775,7 +2807,6 @@ if (isCustomerPublicView) {
                 <p className="text-[10px] text-stone-400 pt-1 italic">
                   * El costo del delivery se calculará y agregará al facturar en el local.
                 </p>
-              </div>
               </div>
 
               <button
