@@ -2448,14 +2448,7 @@ if (isCustomerPublicView) {
       })
       .sort((a, b) => (a.orden || 999) - (b.orden || 999)); // <--- AQUÍ APLICAMOS EL ORDEN
 
-    const selectedPublicZone =
-      deliveryZones.find(z => z.id === customerOrderForm.zoneId) ||
-      deliveryZones[0] || { name: 'Delivery', fee: 0 };
-
     const customerSubtotalUSD = customerCart.reduce((acc, i) => acc + i.price * i.qty, 0);
-    const customerDeliveryFeeUSD =
-      customerCart.length > 0 ? Number(selectedPublicZone.fee || 0) : 0;
-    const customerTotalUSD = customerSubtotalUSD + customerDeliveryFeeUSD;
 
     const addCustomerItem = (prod) => {
       setCustomerCart(prev => {
