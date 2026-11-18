@@ -3323,153 +3323,37 @@ if (isCustomerPublicView) {
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
-                            🔢 N° de Referencia / ID de Operación:
+                          <label className="block text-[11px] font-bold text-emerald-900 mb-0.5">
+                            📥 Cuenta Receptora:
                           </label>
-                          <input
-                            type="text"
-                            value={paymentReference}
-                            onChange={e => setPaymentReference(e.target.value)}
-                            placeholder={
-                              selectedPaymentMethod.toLowerCase().includes('binance')
-                                ? 'ID de Orden Binance Pay'
-                                : 'Ej: 849201'
-                            }
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
-                          />
+                          <select
+                            value={paymentReceiverAccount}
+                            onChange={e => setPaymentReceiverAccount(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-400 bg-emerald-50 text-xs font-bold text-stone-900"
+                          >
+                            {receivingAccounts.map((acc, idx) => (
+                              <option key={idx} value={acc}>{acc}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
 
-                      <div className="pt-1 border-t border-stone-200">
-                        <div className="text-[10px] font-extrabold text-amber-800 uppercase mb-1.5">
-                          Datos del Emisor del Pago (Celdas Individuales):
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
-                              👤 Nombre del Emisor:
-                            </label>
-                            <input
-                              type="text"
-                              value={paymentSenderName}
-                              onChange={e => setPaymentSenderName(e.target.value)}
-                              placeholder="Ej: Carlos Mendoza"
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
-                              🪪 Cédula / RIF del Emisor:
-                            </label>
-                            <input
-                              type="text"
-                              value={paymentSenderDoc}
-                              onChange={e => setPaymentSenderDoc(e.target.value)}
-                              placeholder="Ej: V-18452310"
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
-                            />
-                          </div>
-
-                          <div>
-                            {selectedPaymentMethod.toLowerCase().includes('binance') ? (
-                              <>
-                                <label className="block text-[10px] font-bold text-amber-700 mb-0.5">
-                                  🟡 Usuario / Correo / ID Binance Emisor:
-                                </label>
-                                <input
-                                  type="text"
-                                  value={paymentSenderBank}
-                                  onChange={e => setPaymentSenderBank(e.target.value)}
-                                  placeholder="Ej: usuario_binance o correo@..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-amber-400 text-xs bg-white font-bold text-stone-900"
-                                />
-                              </>
-                            ) : selectedPaymentMethod.toLowerCase().includes('efectivo') ? (
-                              <>
-                                <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
-                                  💵 Detalle de Billetes / Efectivo (Opcional):
-                                </label>
-                                <input
-                                  type="text"
-                                  value={paymentSenderBank}
-                                  onChange={e => setPaymentSenderBank(e.target.value)}
-                                  placeholder="Vacío o detalle de billete recibido..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
-                                />
-                              </>
-                            ) : selectedPaymentMethod.toLowerCase().includes('zelle') ? (
-                              <>
-                                <label className="block text-[10px] font-bold text-purple-700 mb-0.5">
-                                  💜 Correo / Titular de Cuenta Zelle:
-                                </label>
-                                <input
-                                  type="text"
-                                  value={paymentSenderBank}
-                                  onChange={e => setPaymentSenderBank(e.target.value)}
-                                  placeholder="Titular o correo Zelle emisor..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-purple-300 text-xs bg-white text-stone-900"
-                                />
-                              </>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-between mb-0.5">
-                                  <label className="block text-[10px] font-bold text-stone-600">
-                                    🏦 Banco Emisor (Venezuela):
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setIsCustomBankEdit(!isCustomBankEdit);
-                                      if (!isCustomBankEdit) setPaymentSenderBank('');
-                                    }}
-                                    className="text-[9px] font-extrabold text-amber-700 hover:underline"
-                                  >
-                                    {isCustomBankEdit ? '▼ Ver Lista de Bancos' : '✎ Escribir otro'}
-                                  </button>
-                                </div>
-                                {isCustomBankEdit ? (
-                                  <input
-                                    type="text"
-                                    value={paymentSenderBank}
-                                    onChange={e => setPaymentSenderBank(e.target.value)}
-                                    placeholder="Escribe el nombre o código del banco..."
-                                    className="w-full px-2.5 py-1.5 rounded-lg border border-amber-400 text-xs bg-white font-bold text-stone-900"
-                                  />
-                                ) : (
-                                  <select
-                                    value={paymentSenderBank}
-                                    onChange={e => setPaymentSenderBank(e.target.value)}
-                                    className="w-full px-2 py-1.5 rounded-lg border border-stone-300 text-xs bg-white font-bold text-stone-900"
-                                  >
-                                    <option value="">-- Seleccionar Banco de Venezuela --</option>
-                                    {VENEZUELAN_BANKS.map(b => (
-                                      <option key={b} value={b}>
-                                        {b}
-                                      </option>
-                                    ))}
-                                  </select>
-                                )}
-                              </>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-bold text-stone-600 mb-0.5">
-                              📱 Teléfono Emisor:
-                            </label>
-                            <input
-                              type="text"
-                              value={paymentSenderPhone}
-                              onChange={e => setPaymentSenderPhone(e.target.value)}
-                              placeholder="Ej: 0414-8823411"
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-900"
-                            />
-                          </div>
-                        </div>
+                      {/* --- AQUÍ ESTÁ EL CAMPO DE REFERENCIA QUE COLOCAMOS EN EL PASO 2 --- */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-700 mb-0.5">
+                          🔢 N° de Referencia / ID de Operación:
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentReference}
+                          onChange={e => setPaymentReference(e.target.value)}
+                          placeholder="Ej: 849201"
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold bg-white text-stone-900"
+                        />
                       </div>
                     </div>
                   )}
+                     
 
                   <input
                     type="text"
