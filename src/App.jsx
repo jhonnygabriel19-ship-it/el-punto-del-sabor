@@ -954,6 +954,8 @@ const persistToCloud = async (partialData) => {
   const [paymentSenderBank, setPaymentSenderBank] = useState('0102 - Banco de Venezuela (BDV)');
   const [isCustomBankEdit, setIsCustomBankEdit] = useState(false);
   const [paymentSenderPhone, setPaymentSenderPhone] = useState(INITIAL_CUSTOMERS[0].phone);
+  const [receivingAccounts, setReceivingAccounts] = useState(() => loadFromStorage('epds_accounts_v2', ['BDV Empresa', 'Caja Efectivo', 'Binance Principal', 'Zelle General']));
+  const [paymentReceiverAccount, setPaymentReceiverAccount] = useState('BDV Empresa');
 
   const [orderNotes, setOrderNotes] = useState('');
   const [lastInvoiceModal, setLastInvoiceModal] = useState(null);
