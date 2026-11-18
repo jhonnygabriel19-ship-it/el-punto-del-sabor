@@ -374,10 +374,11 @@ const INITIAL_PRODUCTS = [
 
 const INITIAL_DELIVERY_ZONES = [
   { id: 'zone_0', name: 'Retiro Personal / Punto de Entrega Acordado', fee: 0.00 },
-  { id: 'zone_1', name: 'Zona Cercana (Hasta 2 km)', fee: 1.00 },
-  { id: 'zone_2', name: 'Casco Central / Urbanizaciones Medias (3 a 5 km)', fee: 2.00 },
-  { id: 'zone_3', name: 'Zona Larga / Periferia (6 a 9 km)', fee: 3.00 },
-  { id: 'zone_4', name: 'Zona Extraurbana Especial (+10 km)', fee: 4.50 }
+  { id: 'zone_1', name: 'Zona Adyacente (Villa Betania y Alrededores)', fee: 1.50 },
+  { id: 'zone_2', name: 'Eje Core 8 y Periferia Oeste (Más Cercano)', fee: 2.50 },
+  { id: 'zone_3', name: 'Urbanizaciones Medias (Los Olivos, Villa Brasil)', fee: 4.00 },
+  { id: 'zone_4', name: 'Alta Vista y Zonas Retiradas (Más Lejos)', fee: 4.00 },
+  { id: 'zone_5', name: 'Destinos Especiales / San Félix', fee: 6.00 }
 ];
 
 const INITIAL_PAYMENT_METHODS = [
