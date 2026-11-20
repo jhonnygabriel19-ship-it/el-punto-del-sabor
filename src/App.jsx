@@ -647,8 +647,8 @@ const pendingCloudData = useRef({});
   });
   const [showShareMenuModal, setShowShareMenuModal] = useState(false);
   const [businessWhatsApp, setBusinessWhatsApp] = useState(() => {
-    const saved = loadFromStorage('epds_whatsapp_v2', '0424-9043122');
-    return saved === '0414-8823411' ? '0424-9043122' : saved;
+    const saved = loadFromStorage('epds_whatsapp_v2', '0422-1202137');
+    return saved === '0414-8823411' ? '0422-1202137' : saved;
   });
   const [customPublicUrl, setCustomPublicUrl] = useState(() =>
     loadFromStorage('epds_custom_public_url_v2', '')
@@ -5074,7 +5074,7 @@ if (isCustomerPublicView) {
                   type="text"
                   value={businessWhatsApp}
                   onChange={e => setBusinessWhatsApp(e.target.value)}
-                  placeholder="Ej: 0424-9043122"
+                  placeholder="Ej: 0422-1202137"
                   className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold bg-white text-stone-900"
                 />
               </div>
