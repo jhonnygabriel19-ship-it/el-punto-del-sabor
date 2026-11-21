@@ -647,9 +647,12 @@ const pendingCloudData = useRef({});
   });
   const [showShareMenuModal, setShowShareMenuModal] = useState(false);
   const [businessWhatsApp, setBusinessWhatsApp] = useState(() => {
-    const saved = loadFromStorage('epds_whatsapp_v2', '0422-1202137');
-    return saved === '0414-8823411' ? '0422-1202137' : saved;
-  });
+  const saved = loadFromStorage('epds_whatsapp_v2', '0422-1202137');
+  if (saved === '0414-8823411' || saved === '0424-9043122' || saved === '04249043122') {
+    return '0422-1202137';
+  }
+  return saved;
+});
   const [customPublicUrl, setCustomPublicUrl] = useState(() =>
     loadFromStorage('epds_custom_public_url_v2', '')
   );
