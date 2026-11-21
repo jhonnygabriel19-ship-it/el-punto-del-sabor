@@ -647,8 +647,8 @@ const pendingCloudData = useRef({});
   });
   const [showShareMenuModal, setShowShareMenuModal] = useState(false);
   const [businessWhatsApp, setBusinessWhatsApp] = useState(() => {
-  const saved = loadFromStorage('epds_whatsapp_v2', '0422-1202137');
-  if (saved === '0414-8823411' || saved === '0424-9043122' || saved === '04249043122') {
+  const saved = String(loadFromStorage('epds_whatsapp_v2', '0422-1202137') || '');
+  if (!saved.trim() || saved.includes('9043122') || saved.includes('8823411')) {
     return '0422-1202137';
   }
   return saved;
@@ -806,7 +806,7 @@ useEffect(() => {
         if (data.receivingAccounts && typeof setReceivingAccounts === 'function') setReceivingAccounts(prev => JSON.stringify(prev) === JSON.stringify(data.receivingAccounts) ? prev : data.receivingAccounts);
         
         if (typeof data.securityDeletePin !== 'undefined' && typeof setSecurityDeletePin === 'function') setSecurityDeletePin(prev => prev === data.securityDeletePin ? prev : data.securityDeletePin);
-        if (typeof data.businessWhatsApp !== 'undefined' && typeof setBusinessWhatsApp === 'function') setBusinessWhatsApp(prev => prev === data.businessWhatsApp ? prev : data.businessWhatsApp);
+        if (typeof data.businessWhatsApp === 'string' && data.businessWhatsApp.trim() !== '' && !data.businessWhatsApp.includes('9043122') && !data.businessWhatsApp.includes('8823411') && typeof setBusinessWhatsApp === 'function') setBusinessWhatsApp(prev => (prev === data.businessWhatsApp ? prev : data.businessWhatsApp));
         
         setCloudReady(true);
       } else {
