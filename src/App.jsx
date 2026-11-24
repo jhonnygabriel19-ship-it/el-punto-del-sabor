@@ -2298,108 +2298,106 @@ const persistToCloud = async (partialData) => {
     };
 
       const handleExportInvoicesCSV = (invoicesList = sales, label = 'Historico_Completo') => {
-    if (!Array.isArray(invoicesList) || invoicesList.length === 0) {
-      if (typeof showNotification === 'function') {
-        showNotification('No hay facturas disponibles para exportar.', 'error');
+    try {
+      const list = Array.isArray(invoicesList) ? invoicesList : [];
+      if (list.length === 0) {
+        alert('No hay facturas disponibles para exportar.');
+        return;
       }
-      return;
-    }
 
-    const headers = [
-      'N° Factura',
-      'Fecha',
-      'Cajero',
-      'Cliente',
-      'Cédula / RIF',
-      'Teléfono',
-      'Dirección Delivery',
-      'Ruta Delivery',
-      'Condición',
-      'Estado de Pago',
-      'Método de Pago',
-      'Cuenta Receptora',
-      'N° Referencia',
-      'Productos Facturados',
-      'Subtotal ($)',
-      'Delivery ($)',
-      'Total ($)',
-      'Tasa Aplicada (Bs/$)',
-      'Total (Bs.)',
-      'Notas'
-    ];
-
-    const rows = invoicesList.map(s => {
-      const rateUsed = Number(s.exchangeRateUsed || exchangeRate || 0);
-      const totalUSD = Number(s.total || 0);
-      const totalBs = Number(s.totalBs || totalUSD * rateUsed);
-      const itemsSummary = Array.isArray(s.items)
-        ? s.items.map(i => `${i.qty}x ${i.name} ($${Number(i.subtotal || 0).toFixed(2)})`).join(' | ')
-        : '';
-
-      return [
-        s.invoiceNumber || '',
-        s.date || '',
-        s.cashier || '',
-        s.customerName || '',
-        s.customerDocument || 'S/N',
-        s.customerPhone || 'S/N',
-        s.deliveryAddress || '',
-        s.deliveryZoneName || '',
-        (s.paymentCondition || 'contado').toUpperCase(),
-        s.paymentCondition === 'credito' ? (s.creditPaid ? 'COBRADA' : 'PENDIENTE') : 'PAGADA',
-        s.paymentMethod || '',
-        s.paymentDetails?.receiverAccount || s.receivingAccount || 'N/A',
-        s.paymentDetails?.reference || 'N/A',
-        itemsSummary,
-        Number(s.subtotal || 0).toFixed(2),
-        Number(s.deliveryFee || 0).toFixed(2),
-        totalUSD.toFixed(2),
-        rateUsed.toFixed(2),
-        totalBs.toFixed(2),
-        s.notes || ''
+      const headers = [
+        'N° Factura',
+        'Fecha',
+        'Cajero',
+        'Cliente',
+        'Cédula / RIF',
+        'Teléfono',
+        'Dirección Delivery',
+        'Ruta Delivery',
+        'Condición',
+        'Estado de Pago',
+        'Método de Pago',
+        'Cuenta Receptora',
+        'N° Referencia',
+        'Productos Facturados',
+        'Subtotal ($)',
+        'Delivery ($)',
+        'Total ($)',
+        'Tasa Aplicada (Bs/$)',
+        'Total (Bs.)',
+        'Notas'
       ];
-    });
 
-    const BOM = '\uFEFF';
-    const csvLines = [
-      headers.join(';'),
-      ...rows.map(row =>
-        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
-      )
-    ];
+      const fallbackRate = typeof exchangeRate !== 'undefined' ? Number(exchangeRate || 0) : 0;
 
-    const today = new Date().toISOString().split('T')[0];
-    const filename = `Facturas_${label}_${today}.csv`;
-    const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const rows = list.map(s => {
+        if (!s || typeof s !== 'object') return new Array(headers.length).fill('');
+        const rateUsed = Number(s.exchangeRateUsed || fallbackRate || 0);
+        const totalUSD = Number(s.total || 0);
+        const totalBs = Number(s.totalBs || totalUSD * rateUsed);
+        const itemsSummary = Array.isArray(s.items)
+          ? s.items
+              .filter(Boolean)
+              .map(i => (i.qty || 0) + 'x ' + (i.name || '') + ' ($' + Number(i.subtotal || 0).toFixed(2) + ')')
+              .join(' | ')
+          : '';
 
-    if (typeof showNotification === 'function') {
-      showNotification(`✅ Base de datos descargada (${invoicesList.length} facturas): ${filename}`);
-    }
-  };
-      
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const condition = String(s.paymentCondition || 'contado').toLowerCase();
+
+        return [
+          s.invoiceNumber || '',
+          s.date || '',
+          s.cashier || '',
+          s.customerName || '',
+          s.customerDocument || 'S/N',
+          s.customerPhone || 'S/N',
+          s.deliveryAddress || '',
+          s.deliveryZoneName || '',
+          condition.toUpperCase(),
+          condition === 'credito' ? (s.creditPaid ? 'COBRADA' : 'PENDIENTE') : 'PAGADA',
+          s.paymentMethod || '',
+          (s.paymentDetails && s.paymentDetails.receiverAccount) || s.receivingAccount || 'N/A',
+          (s.paymentDetails && s.paymentDetails.reference) || 'N/A',
+          itemsSummary,
+          Number(s.subtotal || 0).toFixed(2),
+          Number(s.deliveryFee || 0).toFixed(2),
+          totalUSD.toFixed(2),
+          rateUsed.toFixed(2),
+          totalBs.toFixed(2),
+          s.notes || ''
+        ];
+      });
+
+      const BOM = '\uFEFF';
+      const csvLines = [
+        headers.join(';'),
+        ...rows.map(row =>
+          row.map(cell => '"' + String(cell ?? '').replace(/"/g, '""') + '"').join(';')
+        )
+      ];
+
+      const today = new Date().toISOString().split('T')[0];
+      const safeLabel = String(label || 'Todas').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = 'Facturas_' + safeLabel + '_' + today + '.csv';
+
+      const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Respaldo_El_Punto_del_Sabor_${getLocalISOString().split('T')[0]}.json`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
+      // Esperar antes de liberar el archivo para que el navegador complete la descarga
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+
       if (typeof showNotification === 'function') {
-        showNotification('✅ Respaldo completo descargado (Incluye Clientes y Facturas).');
+        showNotification('✅ Reporte Excel descargado (' + list.length + ' facturas): ' + filename);
       }
     } catch (error) {
-      console.error("Error al exportar:", error);
-      alert("❌ Error al exportar: " + error.message);
+      console.error('Error al exportar facturas CSV:', error);
+      alert('❌ Error al descargar el Excel de facturas: ' + error.message);
     }
   };
 
