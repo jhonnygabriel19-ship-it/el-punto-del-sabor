@@ -4823,6 +4823,14 @@ if (isCustomerPublicView) {
                     </>
                   );
                 })()}
+                </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'kpis' && (
           <div className="space-y-6">
