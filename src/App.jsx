@@ -3941,10 +3941,12 @@ if (isCustomerPublicView) {
                           >
                             <div className="flex-1 min-w-[200px]">
                               <div className="font-black text-stone-900 flex flex-wrap items-center gap-1.5">
-                                {s.invoiceNumber} — {s.customerName}{' '}
+                                <span>
+                                  {s.invoiceNumber} — {s.customerName} ({s.customerPhone})
+                                </span>
                                 <span className="ml-1 px-2 py-0.5 rounded-md bg-stone-200 text-stone-700 text-[10px] font-bold">
                                   📅 {s.date}
-                                </span> ({s.customerPhone})</span>
+                                </span>
                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${getDaysPendingBadge(daysPending)}`}>
                                   ⏱ {daysPending} {daysPending === 1 ? 'día pendiente' : 'días pendientes'}
                                 </span>
