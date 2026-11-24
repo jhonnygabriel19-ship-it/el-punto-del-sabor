@@ -4823,10 +4823,6 @@ if (isCustomerPublicView) {
                     </>
                   );
                 })()}
-                </div>
-                    </>
-                  );
-                })()}
               </div>
             </div>
           </div>
