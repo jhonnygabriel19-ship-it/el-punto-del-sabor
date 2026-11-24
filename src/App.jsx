@@ -4816,7 +4816,8 @@ if (isCustomerPublicView) {
                             </button>
                           </div>
                         </div>
-                            ))
+                            );
+                          })
                         )}
                       </div>
                     </>
