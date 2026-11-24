@@ -4737,7 +4737,6 @@ if (isCustomerPublicView) {
                         ) : (
                           filteredClosingSales.map(s => {
 
-                    return filteredClosingSales.map(s => {
                       const isCredit = s.paymentCondition === 'credito';
                       const isPaid = s.creditPaid;
                       const daysPending = isCredit && !isPaid ? getDaysPending(s.date) : 0;
@@ -4817,17 +4816,12 @@ if (isCustomerPublicView) {
                             </button>
                           </div>
                         </div>
-                      );
-                    })
+                            ))
                         )}
                       </div>
                     </>
                   );
                 })()}
-              </div>
-            </div>
-          </div>
-        )}
 
         {activeTab === 'kpis' && (
           <div className="space-y-6">
