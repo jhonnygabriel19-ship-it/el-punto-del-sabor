@@ -2281,23 +2281,46 @@ const persistToCloud = async (partialData) => {
 
   const handleExportFullBackupJSON = () => {
     try {
-        const backup = {
+      const backup = {
         businessName: 'El Punto del Sabor',
-        exportedAt: getLocalISOString(),
+        exportedAt: new Date().toISOString(),
         exchangeRate: typeof exchangeRate !== 'undefined' ? exchangeRate : 0,
         users: typeof users !== 'undefined' ? users : [],
         products: typeof products !== 'undefined' ? products : [],
         deliveryZones: typeof deliveryZones !== 'undefined' ? deliveryZones : [],
         paymentMethods: typeof paymentMethods !== 'undefined' ? paymentMethods : [],
-        customers: typeof customers !== 'undefined' ? customers : [], // Clientes incluidos
+        receivingAccounts: typeof receivingAccounts !== 'undefined' ? receivingAccounts : [],
+        customers: typeof customers !== 'undefined' ? customers : [],
         expenses: typeof expenses !== 'undefined' ? expenses : [],
-        sales: typeof sales !== 'undefined' ? sales : [], // Facturas/Ventas incluidas
+        sales: typeof sales !== 'undefined' ? sales : [],
         supplyCatalog: typeof supplyCatalog !== 'undefined' ? supplyCatalog : [],
         supplierCatalog: typeof supplierCatalog !== 'undefined' ? supplierCatalog : [],
         categories: typeof categories !== 'undefined' ? categories : []
-    };
+      };
 
-      const handleExportInvoicesCSV = (invoicesList = sales, label = 'Historico_Completo') => {
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        'Respaldo_El_Punto_del_Sabor_' + new Date().toISOString().split('T')[0] + '.json'
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+      if (typeof showNotification === 'function') {
+        showNotification('✅ Respaldo completo descargado (Incluye Clientes y Facturas).');
+      }
+    } catch (error) {
+      console.error('Error al exportar:', error);
+      alert('❌ Error al exportar: ' + error.message);
+    }
+  };
+
+  const handleExportInvoicesCSV = (invoicesList = sales, label = 'Historico_Completo') => {
     try {
       const list = Array.isArray(invoicesList) ? invoicesList : [];
       if (list.length === 0) {
@@ -2338,7 +2361,15 @@ const persistToCloud = async (partialData) => {
         const itemsSummary = Array.isArray(s.items)
           ? s.items
               .filter(Boolean)
-              .map(i => (i.qty || 0) + 'x ' + (i.name || '') + ' ($' + Number(i.subtotal || 0).toFixed(2) + ')')
+              .map(
+                i =>
+                  (i.qty || 0) +
+                  'x ' +
+                  (i.name || '') +
+                  ' ($' +
+                  Number(i.subtotal || 0).toFixed(2) +
+                  ')'
+              )
               .join(' | ')
           : '';
 
@@ -2388,8 +2419,6 @@ const persistToCloud = async (partialData) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Esperar antes de liberar el archivo para que el navegador complete la descarga
       setTimeout(() => URL.revokeObjectURL(url), 1500);
 
       if (typeof showNotification === 'function') {
