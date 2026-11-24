@@ -2262,11 +2262,11 @@ const persistToCloud = async (partialData) => {
 
   const exportToExcelCSV = (filename, headers, rows) => {
     const BOM = '\uFEFF';
+    const formatCell = cell =>
+      '"' + String(cell ?? '').replace(/\r?\n/g, ' ').replace(/"/g, '""') + '"';
     const csvLines = [
-      headers.join(';'),
-      ...rows.map(row =>
-        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
-      )
+      headers.map(formatCell).join(','),
+      ...rows.map(row => row.map(formatCell).join(','))
     ];
     const blob = new Blob([BOM + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -2276,6 +2276,7 @@ const persistToCloud = async (partialData) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
     showNotification(`Reporte Excel (${filename}) descargado.`);
   };
 
@@ -2400,11 +2401,11 @@ const persistToCloud = async (partialData) => {
       });
 
       const BOM = '\uFEFF';
+      const formatCell = cell =>
+        '"' + String(cell ?? '').replace(/\r?\n/g, ' ').replace(/"/g, '""') + '"';
       const csvLines = [
-        headers.join(';'),
-        ...rows.map(row =>
-          row.map(cell => '"' + String(cell ?? '').replace(/"/g, '""') + '"').join(';')
-        )
+        headers.map(formatCell).join(','),
+        ...rows.map(row => row.map(formatCell).join(','))
       ];
 
       const today = new Date().toISOString().split('T')[0];
